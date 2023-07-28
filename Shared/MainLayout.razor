@@ -1,0 +1,49 @@
+﻿@inherits LayoutComponentBase
+
+<PageTitle>FlowLearningPlatform</PageTitle>
+
+<Layout Class="layout">
+    <Header>
+        <div style="display:flex;float:right;color:white;padding:16px 0px 16px 8px">
+
+            <AuthorizeView>
+                <Authorized>
+                    <p>Hello, @context.User.Identity?.Name!</p>
+                </Authorized>
+                <NotAuthorized>
+                    <p>You're not authorized.</p>
+                </NotAuthorized>
+            </AuthorizeView>
+
+            <Button Icon="plus" Type="primary" @onclick="()=>_modalOpen=true">
+                登录
+            </Button>
+            <Modal Title="登录/注册"
+                   Visible="@_modalOpen"
+                   OnOk="()=>_modalOpen=false"
+                   OnCancel="()=>_modalOpen=false"
+                   Centered="true"
+                   DestroyOnClose="true"
+                   Footer="null">
+             <Login></Login>
+            </Modal>
+        </div>
+        <Menu Theme="MenuTheme.Dark" Mode="MenuMode.Horizontal" DefaultSelectedKeys=@(new[]{"1"})>
+            <MenuItem Key="1">nav 1</MenuItem>
+            <MenuItem Key="2">nav 2</MenuItem>
+        </Menu>
+    </Header>
+    <Content Style="padding:24px;">
+        @Body
+    </Content>
+    <Footer Style="text-align: center; ">Ant Design ©2018 Created by Ant UED</Footer>
+</Layout>
+
+<style>
+
+</style>
+
+@code
+{
+    private bool _modalOpen = false;
+}

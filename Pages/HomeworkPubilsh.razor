@@ -1,0 +1,195 @@
+﻿@page  "/homework/publish"
+
+<h3>HomeworkPubilsh</h3>
+
+<Form Model="@PublicHomework"
+      LabelColSpan="8"
+      WrapperColSpan="16"
+      OnFinish="OnFinish"
+      OnFinishFailed="OnFinishFailed"
+      Size="Default">
+    <FormItem Label="主题">
+        <Input @bind-Value="@context.Title" />
+    </FormItem>
+    <FormItem Label="描述">
+        <TextArea @bind-Value="@context.Description" />
+    </FormItem>
+@*    <FormItem Label="所属课程">
+        <AutoComplete @bind-Value="@value" Options="@options" OptionFormat='x => $"{x.Value} City"' />
+    </FormItem>*@
+
+    <FormItem Label="立即发布">
+        <Switch @bind-Value="@_publishImmediaty" />
+    </FormItem>
+    @if (_publishImmediaty)
+    {
+        <FormItem Label="截止日期">
+            <DatePicker @bind-Value="@context.DeadLine" />
+        </FormItem>
+    }
+    else
+    {
+        <FormItem Label="起止日期">
+            <RangePicker @bind-Value="@context.TimeRange" />
+        </FormItem>
+    }
+    
+
+    <FormItem Label="文件自动重命名">
+        <Tooltip Placement="@Placement.TopLeft" Title="按照 课程-作业名称-学生姓名-学号 的格式">
+            <Switch @bind-Value="@context.AutoRename"/>
+        </Tooltip>        
+    </FormItem>
+
+
+
+    <FormItem Label="文件提交限制">
+        <Switch @bind-Value="@_isFileLimited" />
+    </FormItem>
+    @if (_isFileLimited)
+    {
+        <div>
+@*            <Slider TValue="double" Min="1" Max="100"  @bind-Value="AddWorkParts[0].FileSizeLimite" />
+            <AntDesign.InputNumber Min="1" Max="100"   Style="margin:0 16px;" @bind-Value="AddWorkParts[0].FileSizeLimite" TValue="double" />
+            <p>(MB)</p>*@
+            <hr>
+@*            <EnumSelect @bind-Value="AddWorkParts[0].FileTypeLimite"  TEnum="WorkType"/>*@
+
+        </div>       
+    }
+
+    <Text>作业提交：默认 @AddWorkParts.Count 个作业</Text>
+    
+@*    <Form Model="@PublicHomework.Partworks">
+
+    </Form>*@
+
+
+    <Upload Action="https://www.mocky.io/v2/5cc8019d300000980a055e76"
+            Name="files"
+            Drag
+            Multiple
+            OnSingleCompleted="OnSingleCompleted">
+        <p class="ant-upload-drag-icon">
+            <Icon Type="inbox" />
+        </p>
+        <p class="ant-upload-text">点击或拖拽上传文件</p>
+        <p class="ant-upload-hint">
+            主流浏览器和IE10+支持一次上传多个文件
+        </p>
+    </Upload>
+
+    <FormItem WrapperColOffset="8" WrapperColSpan="16">
+        <Button HtmlType="submit">
+            提交
+        </Button>
+    </FormItem>
+</Form>
+
+<Button Icon="plus" Type="primary" @onclick="_=>OpenDiyDrawer()">自定义作业提交</Button>
+<Drawer Closable="true" Width="720" Visible="_diyHomework" Title='("更准确地定义作业提交")' OnClose="_=>OnDiyDrawerClosed()">
+    <Template style="height:90%">
+        <Form Model="@AddWorkPart"
+              LabelColSpan="8"
+              WrapperColSpan="16"
+              OnFinish="OnPartFinish"
+              OnFinishFailed="OnPartFinishFailed"
+              Size="Default">
+            <FormItem Label="子作业主题">
+                <Input @bind-Value="@context.Title" />
+            </FormItem>
+            <FormItem Label="子作业描述">
+                <TextArea @bind-Value="@context.Description" />
+            </FormItem>
+            <FormItem Label="是否有文件">
+                <Switch @bind-Value="@context.HaveFile" />
+            </FormItem>
+            @if (context.HaveFile)
+            {
+                <div>
+  @*                  <FormItem Label="文件大小限制">
+                        <Slider TValue="double" Min="1" Max="100" @bind-Value="context.FileSizeLimite" />
+                        <AntDesign.InputNumber Min="1" Max="100"  Style="margin:0 16px;" @bind-Value="context.FileSizeLimite" TValue="double" />
+                        <p>(MB)</p>
+                    </FormItem>*@
+
+                    <hr>
+@*                    <FormItem Label="文件提交类型">
+                        <EnumSelect @bind-Value="context.FileTypeLimite" TEnum="WorkType" />
+                    </FormItem>*@
+
+                </div>
+            }
+            <FormItem WrapperColOffset="8" WrapperColSpan="16">
+                <Button HtmlType="submit">
+                    添加子作业
+                </Button>
+            </FormItem>
+        </Form>
+    </Template>
+</Drawer>
+
+@code {
+    public PublishHomework PublicHomework{ get; set; } =new();
+    public AddAssignmentDivision AddWorkPart { get; set; } = new();
+    public List<AddAssignmentDivision> AddWorkParts { get; set; } = new() { new() };
+    private bool _publishImmediaty = true;
+
+    private void OnFinish(EditContext editContext)
+    {
+
+    }
+    private void OnFinishFailed(EditContext editContext)
+    {
+
+    }
+
+        private void OnPartFinish(EditContext editContext)
+    {
+
+    }
+    private void OnPartFinishFailed(EditContext editContext)
+    {
+
+    }
+
+
+    private bool _diyHomework = false;
+    private void OpenDiyDrawer()
+    {
+        _diyHomework = true;
+    }
+
+    private void OnDiyDrawerClosed()
+    {
+        _diyHomework = false;
+    }
+
+    void OnSingleCompleted(UploadInfo fileinfo)
+    {
+        if (fileinfo.File.State == UploadState.Success)
+        {
+            var result = fileinfo.File.GetResponse<ResponseModel>();
+            fileinfo.File.Url = result.url;
+        }      
+    }
+
+
+
+
+    public class ResponseModel
+    {
+        public string name { get; set; }
+
+        public string status { get; set; }
+
+        public string url { get; set; }
+
+        public string thumbUrl { get; set; }
+    }
+
+    private bool _isFileLimited=true;
+
+
+
+}

@@ -1,0 +1,61 @@
+﻿@inject NavigationManager NavigationManager
+@inject IAuthService AuthService
+@inject IMessageService MessageService
+
+<Form Model="@model"   
+      OnFinish="OnFinish"
+      OnFinishFailed="OnFinishFailed"
+      LabelColSpan="8"
+      WrapperColSpan="16">
+    <FormItem>
+        <Input @bind-Value="@context.StudentNumber" />
+    </FormItem>
+    <FormItem>
+        <InputPassword @bind-Value="@context.Password" />
+    </FormItem>
+    <FormItem WrapperColOffset="8" WrapperColSpan="16">
+        <Checkbox @bind-Value="context.RememberMe">记住我</Checkbox>
+    </FormItem>
+    <FormItem WrapperColOffset="8" WrapperColSpan="16">
+        <Button Type="@ButtonType.Primary" HtmlType="submit">
+           登录
+        </Button>
+        <Button Type="@ButtonType.Primary" @onclick="ToRegister">
+           注册
+        </Button>
+    </FormItem>
+</Form>
+
+
+@code {
+    private Models.Form.UserLogin model = new();
+
+    private async void OnFinish(EditContext editContext)
+    {
+        ServiceResponse<string> response  =   await  AuthService.Login(model);
+        if (response.Success)
+        {
+            await  MessageService.Success("登录成功!");
+            if (!string.IsNullOrEmpty(response.Message))
+            {
+                // 写入本地存储
+            }
+        }
+        else
+        {
+            await MessageService.Error(response.Message);
+        }
+
+
+    }
+
+    private void OnFinishFailed(EditContext editContext)
+    {
+        Console.WriteLine($"Failed:{JsonSerializer.Serialize(model)}");
+    }
+
+    private void ToRegister()
+    {
+        NavigationManager.NavigateTo("/register",true);    
+    }
+}

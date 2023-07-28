@@ -1,0 +1,179 @@
+﻿@page "/register"
+@inject IMessageService _message
+@inject NavigationManager NavigationManager
+@inject IAuthService AuthService
+
+<div>
+    <Steps Current="@_progressCurrent">
+        <Step Title="身份验证" />
+        <Step Title="基本信息" />
+        <Step Title="可选信息" />
+    </Steps>
+
+
+    
+
+    @if (!_isFinish)
+    {
+        switch (_progressCurrent)
+        {
+            case 0:
+                <Form @ref="_validateFrom" Model="@_validateModel"
+                      LabelColSpan="8"
+                      WrapperColSpan="16"
+                      OnFinish="OnValidateSuccess"
+                      OnFinishFailed="OnValidateFailed">
+                    <FormItem Label="学号">
+                        <Text>输入11位学号(如20001110111)</Text>
+                        <Input @bind-Value="@context.StudentNumber" />
+                        
+                    </FormItem>
+                    <FormItem Label="生日">
+                        <Text>选择生日</Text>
+                        <DatePicker TValue="DateTime" Picker="@DatePickerType.Date" @bind-Value="@context.Brithday" />
+                    </FormItem>
+                    <FormItem WrapperColOffset="8" WrapperColSpan="16">
+                        <Button Type="@ButtonType.Primary" HtmlType="submit">
+                            验证
+                        </Button>
+                    </FormItem>
+                </Form>
+
+                break;
+            case 1:
+
+                <Form Model="@_baseModel"
+                      LabelColSpan="8"
+                      WrapperColSpan="16"
+                      OnFinish="OnBaseSuccess"
+                      OnFinishFailed="OnBaseFailed">
+                    <FormItem Label="姓名">
+                        <Input @bind-Value="@context.Name" />
+                    </FormItem>
+@*                    <FormItem Label="院系">
+                        <Text>选择院系</Text>
+                        <EnumSelect TEnum="Department" @bind-Value="context.Department"/>
+                    </FormItem>
+                    <FormItem Label="专业">
+                        <Text>选择专业</Text>
+                        <EnumSelect TEnum="Major" @bind-Value="context.Major" />
+                    </FormItem>*@
+                    <FormItem Label="密码">
+                        <Text>输入密码</Text>
+                        <InputPassword @bind-Value="context.Password"/>
+                    </FormItem>
+                    <FormItem Label="确认密码">
+                        <Text>二次输入密码</Text>
+                        <InputPassword @bind-Value="context.ConfirmPassword" />
+                    </FormItem>
+                    <FormItem WrapperColOffset="8" WrapperColSpan="16">
+                        <Button Type="@ButtonType.Primary" HtmlType="submit">
+                            确认
+                        </Button>
+                    </FormItem>
+                </Form>
+                break;
+
+            case 2:
+                <Form Model="@_extraInfo"
+                      LabelColSpan="8"
+                      WrapperColSpan="16"
+                      OnFinish="OnExtraSuccess"
+                      OnFinishFailed="OnExtraFailed">
+                    <FormItem Label="电话号码">                        
+                        <Input @bind-Value="@context.PhoneNumber" />
+                    </FormItem>
+                    <FormItem Label="电子邮箱">
+                        <Input @bind-Value="@context.Email" />
+                    </FormItem>
+                    <FormItem Label="个人简介">
+                        <TextArea @bind-Value="@context.Description" />
+                    </FormItem>
+                    <FormItem WrapperColOffset="8" WrapperColSpan="16">
+                        <Button Type="@ButtonType.Primary" HtmlType="submit">
+                            完成注册
+                        </Button>
+                    </FormItem>
+                </Form>
+                break;
+        }
+    }
+    else
+    {
+        <Result Status="success"
+                Title="账户注册成功!"
+                SubTitle="Order number: 2017182818828182881 Cloud server configuration takes 1-5 minutes, please wait.">
+            <Extra>
+                <Button @onclick="BackToIndex" Type="primary">返回主页</Button>
+            </Extra>
+
+        </Result>
+    }
+    
+</div>
+
+
+@code {
+    private int _progressCurrent=0;
+    private bool _isFinish = false;
+
+    #region --FormHandle--
+    private Form<IdentityVal> _validateFrom;
+    private IdentityVal _validateModel=new() { Brithday=new DateTime(2000,1,1)};
+    private async void OnValidateSuccess(EditContext context)
+    {
+        ServiceResponse<bool> response= await AuthService.ValidateUser(_validateModel);
+        if (response.Success)
+        {
+            _progressCurrent = 1;
+            await _message.Success("通过验证!");
+        }
+        else
+        {
+            _validateFrom.Reset();
+            await _message.Warning(response.Message);
+        }
+    }    
+    private async void OnValidateFailed(EditContext context)
+    {
+        await _message.Warning("请按正确格式输入的信息");
+    }
+
+    private RegisterSecondStep _baseModel = new();
+    private async void OnBaseSuccess(EditContext context)
+    {
+        _progressCurrent = 2;
+        await _message.Success("完成填写");
+
+    }
+    private async void OnBaseFailed(EditContext context)
+    {
+        await _message.Warning("请按正确格式输入的信息");
+    }
+
+    private ExtraInfo _extraInfo = new();
+    private async void OnExtraSuccess(EditContext context)
+    {
+        ServiceResponse<string> response =await AuthService.Register(_validateModel, _baseModel, _extraInfo);
+        if (response.Success)
+        {
+            _progressCurrent = 3;
+            _isFinish = true;
+        }
+        else
+        {
+            await _message.Error("注册发生错误，请重试或联系相关人员");
+        }
+    }
+    private async void OnExtraFailed(EditContext context)
+    {
+        await _message.Warning("请按正确格式输入的信息");
+    }
+
+#endregion
+
+    private void BackToIndex()
+    {
+        NavigationManager.NavigateTo("/index");
+    }
+}

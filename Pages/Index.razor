@@ -1,0 +1,100 @@
+﻿@page "/"
+@page "/index"
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Index</PageTitle>
+
+<GridRow Gutter="@gutter">
+    <GridCol Xs="GridProperty(24,1) " Sm="GridProperty(10,0) ">
+        <AntList Bordered DataSource="@data" Size="small">
+            <Header>Header</Header>
+            <ChildContent Context="item">
+                <ListItem>
+                    <span><Text Mark>[ITEM]</Text></span>@item
+                </ListItem>
+            </ChildContent>
+            <Footer>Footer</Footer>
+        </AntList>
+    </GridCol>
+    <GridCol Xs="GridProperty(24,0)"  Sm="GridProperty(14,1) ">
+       <div>
+
+                <Carousel Autoplay="TimeSpan.FromSeconds(5)">
+                    <CarouselSlick>
+                        <h3>1</h3>
+                    </CarouselSlick>
+                    <CarouselSlick>
+                        <h3>2</h3>
+                    </CarouselSlick>
+                    <CarouselSlick>
+                        <h3>3</h3>
+                    </CarouselSlick>
+                    <CarouselSlick>
+                        <h3>4</h3>
+                    </CarouselSlick>
+                </Carousel>
+
+       </div>
+       <div>
+           <GridRow Gutter="8">
+                @for (int i = 0; i < 4; i++)
+                {
+                    <GridCol Xs="12" Md="6">
+                    <Card Title="Temp">
+                        <Body>
+                            hhh
+                        </Body>
+                    </Card>
+                    </GridCol>
+
+                }
+            </GridRow>
+           </div>
+    </GridCol>
+
+</GridRow>
+
+<style>
+    .ant-carousel .slick-slide {
+        text-align: center;
+        height: 160px;
+        line-height: 160px;
+        background: #364d79;
+        overflow: hidden;
+    }
+
+        .ant-carousel .slick-slide h3 {
+            color: #fff;
+        }
+</style>
+
+@code{
+    EmbeddedProperty GridProperty(int span, int order) => new() { Span = span, Order = order };
+    Dictionary<string, int> gutter = new()
+    {
+        ["xs"] = 8,
+        ["sm"] = 16,
+        ["md"] = 24,
+        ["lg"] = 32,
+        ["xl"] = 48,
+        ["xxl"] = 64
+    };
+    public List<string> data = new List<string>
+    {
+        "Racing car sprays burning fuel into crowd.",
+        "Japanese princess to wed commoner.",
+        "Australian walks 100km after outback crash.",
+        "Man charged over missing wedding girl.",
+        "Los Angeles battles huge wildfires."
+    };
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+
+        AuthenticationStateProvider.GetAuthenticationStateAsync();
+        base.OnAfterRender(firstRender);
+    }
+
+}
+
+
