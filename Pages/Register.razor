@@ -2,6 +2,8 @@
 @inject IMessageService _message
 @inject NavigationManager NavigationManager
 @inject IAuthService AuthService
+@inject ISchoolService SchoolService
+@inject IDepartmentService DepartmentService
 
 <div>
     <Steps Current="@_progressCurrent">
@@ -50,14 +52,10 @@
                     <FormItem Label="姓名">
                         <Input @bind-Value="@context.Name" />
                     </FormItem>
-@*                    <FormItem Label="院系">
-                        <Text>选择院系</Text>
-                        <EnumSelect TEnum="Department" @bind-Value="context.Department"/>
+                   <FormItem Label="院系专业">
+                        <text>选择院系和专业</text>
+                        <Cascader Options="@_cascaderNodes" @bind-Value="@context.DepartmentTypeId"/>
                     </FormItem>
-                    <FormItem Label="专业">
-                        <Text>选择专业</Text>
-                        <EnumSelect TEnum="Major" @bind-Value="context.Major" />
-                    </FormItem>*@
                     <FormItem Label="密码">
                         <Text>输入密码</Text>
                         <InputPassword @bind-Value="context.Password"/>
@@ -90,7 +88,7 @@
                         <TextArea @bind-Value="@context.Description" />
                     </FormItem>
                     <FormItem WrapperColOffset="8" WrapperColSpan="16">
-                        <Button Type="@ButtonType.Primary" HtmlType="submit">
+                        <Button Loading="@_isLoading" Type="@ButtonType.Primary" HtmlType="submit">
                             完成注册
                         </Button>
                     </FormItem>
@@ -102,7 +100,7 @@
     {
         <Result Status="success"
                 Title="账户注册成功!"
-                SubTitle="Order number: 2017182818828182881 Cloud server configuration takes 1-5 minutes, please wait.">
+                SubTitle="@($"(欢迎你,{_baseModel.Name} !你的账户UID是:{_userId}(很长对吧，这个不用记)")">
             <Extra>
                 <Button @onclick="BackToIndex" Type="primary">返回主页</Button>
             </Extra>
@@ -116,6 +114,30 @@
 @code {
     private int _progressCurrent=0;
     private bool _isFinish = false;
+    private string _userId;
+
+    private List<CascaderNode> _cascaderNodes = new();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        List<SchoolType> _schoolTypes = await SchoolService.GetAllAsync();
+
+        foreach (var school in _schoolTypes)
+        {
+            var departments = await DepartmentService.GetDepartmentBySchool(school);
+            var tempList = new List<CascaderNode>();
+            if (departments != null)
+            {              
+                foreach (var department in departments)
+                {
+                    tempList.Add(new() { Label = department.Name, Value = department.DepartmentTypeId.ToString() });
+                }
+            }
+            _cascaderNodes.Add(new() { Label = school.Name, Value = school.SchoolTypeId.ToString(), Children = tempList });
+        }
+
+    }
+
 
     #region --FormHandle--
     private Form<IdentityVal> _validateFrom;
@@ -124,14 +146,18 @@
     {
         ServiceResponse<bool> response= await AuthService.ValidateUser(_validateModel);
         if (response.Success)
-        {
+        {        
             _progressCurrent = 1;
+            StateHasChanged();
+            // ?
             await _message.Success("通过验证!");
+
         }
         else
-        {
+        {           
             _validateFrom.Reset();
             await _message.Warning(response.Message);
+
         }
     }    
     private async void OnValidateFailed(EditContext context)
@@ -139,7 +165,9 @@
         await _message.Warning("请按正确格式输入的信息");
     }
 
+
     private RegisterSecondStep _baseModel = new();
+
     private async void OnBaseSuccess(EditContext context)
     {
         _progressCurrent = 2;
@@ -151,14 +179,20 @@
         await _message.Warning("请按正确格式输入的信息");
     }
 
+
     private ExtraInfo _extraInfo = new();
+    private bool _isLoading=false;
     private async void OnExtraSuccess(EditContext context)
     {
+        _isLoading = true;
         ServiceResponse<string> response =await AuthService.Register(_validateModel, _baseModel, _extraInfo);
+        _userId = response.Data;
+        _isLoading = false;
         if (response.Success)
         {
             _progressCurrent = 3;
             _isFinish = true;
+            StateHasChanged();
         }
         else
         {

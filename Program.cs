@@ -31,6 +31,8 @@ builder.Services.AddScoped<AuthenticationStateProvider,CustomAuthenticationState
 builder.Services.AddSingleton<WeatherForecastService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IWorkService, WorkService>();
+builder.Services.AddScoped<IDepartmentService, DepartmentService>();
+builder.Services.AddScoped<ISchoolService, SchoolService>();
 builder.Services.AddAntDesign();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

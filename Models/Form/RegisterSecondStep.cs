@@ -10,9 +10,7 @@ namespace FlowLearningPlatform.Models.Form
         [Required]
         public string Name { get; set; }
         [Required]
-        public DepartmentType DepartmentType { get; set; }
-        [Required]
-        public SchoolType SchoolType { get; set; }
+        public string DepartmentTypeId { get; set; }
         [Required]
         public string Password { get;set; }
 		[Required,Compare(nameof(Password))]

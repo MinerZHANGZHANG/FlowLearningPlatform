@@ -1,7 +1,5 @@
 ﻿using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Components.Authorization;
-using System.Net.Http.Headers;
-using System.Net.Http;
 using System.Security.Claims;
 using System.Text.Json;
 
@@ -15,6 +13,8 @@ namespace FlowLearningPlatform
 
         private string _authTokenName=string.Empty;
 
+        private bool _isPrerendering = true;
+
         public CustomAuthenticationStateProvider(
             ILogger<CustomAuthenticationStateProvider> logger
             ,ILocalStorageService localStorageService
@@ -25,15 +25,50 @@ namespace FlowLearningPlatform
             _configuration = configuration;
             _authTokenName = _configuration.GetSection("AppSettings:LocalTokenName").Value;
         }
-        public override Task<AuthenticationState> GetAuthenticationStateAsync()
+        public override async Task<AuthenticationState> GetAuthenticationStateAsync()
         {
+            if (_isPrerendering)
+            {
+                var identity = new ClaimsIdentity();
 
-            var identity = new ClaimsIdentity();
+                var user = new ClaimsPrincipal(identity);
+                var state = new AuthenticationState(user);
 
-            var user = new ClaimsPrincipal(identity);
-            var state = new AuthenticationState(user);
+                return state;
+            }
+            else
+            {
+                string authToken = await _localStorageService.GetItemAsStringAsync(_authTokenName);
 
-            return Task.FromResult(state);
+                var identity = new ClaimsIdentity();
+
+                if (!string.IsNullOrEmpty(authToken))
+                {
+                    try
+                    {
+                        identity = new ClaimsIdentity(ParseClaimFromJwt(authToken), "jwt");
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(message: ex.Message);
+                        await _localStorageService.RemoveItemAsync(_authTokenName);
+                        identity = new ClaimsIdentity();
+                    }
+                }
+                var user = new ClaimsPrincipal(identity);
+                var state = new AuthenticationState(user);
+
+                // NotifyAuthenticationStateChanged(Task.FromResult(state));
+                return state;
+            }
+        }
+
+        // Method to be called when the client-side rendering is complete
+        public async Task MarkAsClientRendered()
+        {
+            _isPrerendering = false;
+            var state= await GetAuthenticationStateAsync();
+            NotifyAuthenticationStateChanged(Task.FromResult(state));
         }
 
         public async Task UpdateAuthStateAsync()
@@ -61,6 +96,14 @@ namespace FlowLearningPlatform
 
             NotifyAuthenticationStateChanged(Task.FromResult(state));
 
+        }
+
+        [Obsolete]
+        public void MarkUserAsAuthenticated(string account)
+        {
+            var authenticatedUser = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.Name, account) }, "jwt"));
+            var authState = Task.FromResult(new AuthenticationState(authenticatedUser));
+            NotifyAuthenticationStateChanged(authState);
         }
 
 

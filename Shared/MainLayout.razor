@@ -1,4 +1,5 @@
 ﻿@inherits LayoutComponentBase
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>FlowLearningPlatform</PageTitle>
 
@@ -46,4 +47,12 @@
 @code
 {
     private bool _modalOpen = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await (AuthenticationStateProvider as CustomAuthenticationStateProvider).MarkAsClientRendered();
+        }
+    }
 }

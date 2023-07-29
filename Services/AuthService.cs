@@ -1,4 +1,5 @@
 ﻿using Blazored.LocalStorage;
+using FlowLearningPlatform.Models;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -12,6 +13,7 @@ namespace FlowLearningPlatform.Services
         Task<ServiceResponse<bool>> ValidateUser(IdentityVal identityVal);
         Task<ServiceResponse<string>> Register(IdentityVal identityVal,RegisterSecondStep baseInfo,ExtraInfo extraInfo);
 	    Task<ServiceResponse<string>> Login(UserLogin userLogin);
+        Task<ClaimsPrincipal> LoginAsync(string name);
     }
 
     public class AuthService : IAuthService
@@ -20,15 +22,13 @@ namespace FlowLearningPlatform.Services
         private readonly ILogger<AuthService> _logger;
         private readonly IConfiguration _configuration;
         private readonly ILocalStorageService _localStorageService;
-        private readonly AuthenticationStateProvider _authenticationStateProvider;
 
-        public AuthService(DataContext context,ILogger<AuthService> logger, IConfiguration configuration,ILocalStorageService localStorageService,AuthenticationStateProvider authenticationStateProvider)
+        public AuthService(DataContext context,ILogger<AuthService> logger, IConfiguration configuration,ILocalStorageService localStorageService)
         {
             _context = context;
             _logger = logger;
             _configuration = configuration;
             _localStorageService = localStorageService;
-            _authenticationStateProvider = authenticationStateProvider;
         }
 
         public async Task<ServiceResponse<string>> Register(IdentityVal identityVal, RegisterSecondStep baseInfo, ExtraInfo extraInfo)
@@ -37,6 +37,7 @@ namespace FlowLearningPlatform.Services
             {
                 byte[] passwordHash;
                 byte[] passwordSalt;
+                Guid defaultRoleUid = _context.RoleTypes.FirstOrDefault().RoleTypeId;
                 CreatePassword(baseInfo.Password, out passwordHash, out passwordSalt);
 
                 User newUser = new()
@@ -47,8 +48,8 @@ namespace FlowLearningPlatform.Services
                     PasswordSalt = passwordSalt,
                     RegTime = DateTime.Now,
 
-                    //Major = baseInfo.Major,
-                    //Department = baseInfo.Department,
+                    DepartmentTypeId = Guid.Parse(baseInfo.DepartmentTypeId),
+                    RoleTypeId = defaultRoleUid,
                     StudentNumber = identityVal.StudentNumber,
 
                     PhoneNumber = extraInfo.PhoneNumber,
@@ -98,10 +99,30 @@ namespace FlowLearningPlatform.Services
             passwordHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
         }
 
+        public Task<ClaimsPrincipal> LoginAsync(string name)
+        {
+                // Create a list of claims for the authenticated user.
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.NameIdentifier, "Test"),
+                    new Claim(ClaimTypes.Name, "Test"),
+                    new Claim(ClaimTypes.Email, "Test@qq.com"),
+                    new Claim(ClaimTypes.Role,"22")
+                };
+
+
+                // Create a ClaimsIdentity and then a ClaimsPrincipal.
+                var identity = new ClaimsIdentity(claims, "jwt");
+                var principal = new ClaimsPrincipal(identity);
+
+                return Task.FromResult(principal);
+           
+        }
+
         public async Task<ServiceResponse<string>> Login(UserLogin userLogin)
         {
             ServiceResponse<string> response = new();
-            User user = await _context.Users.FirstOrDefaultAsync(u => u.PhoneNumber.Equals(userLogin.StudentNumber));
+            User user = await _context.Users.FirstOrDefaultAsync(u => u.StudentNumber.Equals(userLogin.StudentNumber));
 
             if (user==null)
             {
@@ -116,11 +137,9 @@ namespace FlowLearningPlatform.Services
             else
             {
                 if (userLogin.RememberMe)
-                {
-                   
+                {                  
                     response.Data = CreateJWTToken(user);
-                    await _localStorageService.SetItemAsync("access_token", response.Data);
-                  
+                   // await _localStorageService.SetItemAsync("access_token", response.Data);                  
                 }             
                 response.Success = true;
             }

@@ -1,6 +1,5 @@
 ﻿@page "/"
-@page "/index"
-@inject AuthenticationStateProvider AuthenticationStateProvider
+
 
 <PageTitle>Index</PageTitle>
 
@@ -88,12 +87,7 @@
         "Los Angeles battles huge wildfires."
     };
 
-    protected override void OnAfterRender(bool firstRender)
-    {
 
-        AuthenticationStateProvider.GetAuthenticationStateAsync();
-        base.OnAfterRender(firstRender);
-    }
 
 }
 

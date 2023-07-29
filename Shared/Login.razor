@@ -1,6 +1,9 @@
 ﻿@inject NavigationManager NavigationManager
 @inject IAuthService AuthService
 @inject IMessageService MessageService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ILocalStorageService LocalStorageService
+@inject IConfiguration Configuration
 
 <Form Model="@model"   
       OnFinish="OnFinish"
@@ -29,23 +32,32 @@
 
 @code {
     private Models.Form.UserLogin model = new();
+    private string _authTokenName="authToken";
+
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        _authTokenName = Configuration.GetSection("AppSettings:LocalTokenName").Value;
+        return base.OnAfterRenderAsync(firstRender);
+    }
 
     private async void OnFinish(EditContext editContext)
     {
         ServiceResponse<string> response  =   await  AuthService.Login(model);
         if (response.Success)
-        {
-            await  MessageService.Success("登录成功!");
-            if (!string.IsNullOrEmpty(response.Message))
+        {           
+            if (!string.IsNullOrEmpty(response.Data))
             {
                 // 写入本地存储
+                LocalStorageService.SetItemAsync(_authTokenName,response.Data);
+                //(AuthenticationStateProvider as CustomAuthenticationStateProvider).MarkUserAsAuthenticated("ww");
             }
+            await MessageService.Success("登录成功!");
         }
         else
         {
             await MessageService.Error(response.Message);
         }
-
+       
 
     }
 
