@@ -1,4 +1,5 @@
-﻿using Blazored.LocalStorage;
+﻿using AntDesign.Internal;
+using Blazored.LocalStorage;
 using FlowLearningPlatform.Models;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.IdentityModel.Tokens;
@@ -13,7 +14,8 @@ namespace FlowLearningPlatform.Services
         Task<ServiceResponse<bool>> ValidateUser(IdentityVal identityVal);
         Task<ServiceResponse<string>> Register(IdentityVal identityVal,RegisterSecondStep baseInfo,ExtraInfo extraInfo);
 	    Task<ServiceResponse<string>> Login(UserLogin userLogin);
-        Task<ClaimsPrincipal> LoginAsync(string name);
+        Task Logout();
+        void RefreshAuthState();
     }
 
     public class AuthService : IAuthService
@@ -21,14 +23,14 @@ namespace FlowLearningPlatform.Services
         private readonly DataContext _context;
         private readonly ILogger<AuthService> _logger;
         private readonly IConfiguration _configuration;
-        private readonly ILocalStorageService _localStorageService;
+        private readonly AuthenticationStateProvider _authenticationState;
 
-        public AuthService(DataContext context,ILogger<AuthService> logger, IConfiguration configuration,ILocalStorageService localStorageService)
+        public AuthService(DataContext context,ILogger<AuthService> logger, IConfiguration configuration,AuthenticationStateProvider authenticationState)
         {
             _context = context;
             _logger = logger;
             _configuration = configuration;
-            _localStorageService = localStorageService;
+            _authenticationState = authenticationState;
         }
 
         public async Task<ServiceResponse<string>> Register(IdentityVal identityVal, RegisterSecondStep baseInfo, ExtraInfo extraInfo)
@@ -99,25 +101,7 @@ namespace FlowLearningPlatform.Services
             passwordHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
         }
 
-        public Task<ClaimsPrincipal> LoginAsync(string name)
-        {
-                // Create a list of claims for the authenticated user.
-                var claims = new List<Claim>
-                {
-                    new Claim(ClaimTypes.NameIdentifier, "Test"),
-                    new Claim(ClaimTypes.Name, "Test"),
-                    new Claim(ClaimTypes.Email, "Test@qq.com"),
-                    new Claim(ClaimTypes.Role,"22")
-                };
 
-
-                // Create a ClaimsIdentity and then a ClaimsPrincipal.
-                var identity = new ClaimsIdentity(claims, "jwt");
-                var principal = new ClaimsPrincipal(identity);
-
-                return Task.FromResult(principal);
-           
-        }
 
         public async Task<ServiceResponse<string>> Login(UserLogin userLogin)
         {
@@ -138,13 +122,18 @@ namespace FlowLearningPlatform.Services
             {
                 if (userLogin.RememberMe)
                 {                  
-                    response.Data = CreateJWTToken(user);
-                   // await _localStorageService.SetItemAsync("access_token", response.Data);                  
+                    response.Data = CreateJWTToken(user);                  
                 }             
                 response.Success = true;
+                
             }
 
             return response;
+        }
+
+       public void RefreshAuthState()
+        {
+            (_authenticationState as CustomAuthenticationStateProvider).Login();
         }
 
         private string CreateJWTToken(User user)
@@ -175,6 +164,11 @@ namespace FlowLearningPlatform.Services
             using var hmac = new HMACSHA512(passwordSalt);
             var computeHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
             return computeHash.SequenceEqual(passwordHash);
+        }
+
+        public async Task Logout()
+        {
+          await  (_authenticationState as CustomAuthenticationStateProvider).Logout();
         }
     }
 }

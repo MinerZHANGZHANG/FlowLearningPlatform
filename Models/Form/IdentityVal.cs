@@ -11,5 +11,7 @@ namespace FlowLearningPlatform.Models.Form
 		public string StudentNumber { get; set; }
 		[Required]
 		public DateTime Brithday { get; set; }
+		[Required]
+		public string RoleId { get; set; }
 	}
 }

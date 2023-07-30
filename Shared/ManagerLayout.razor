@@ -3,8 +3,9 @@
 <PageTitle>FlowLearningPlatform</PageTitle>
 
 <Layout Style="min-height: 100vh; ">
-    <Sider Collapsible>
-        <div class="logo" />
+    <Sider Breakpoint="@BreakpointType.Sm"
+           CollapsedWidth="64" >
+        <Affix OffsetTop="10">
         <Menu Theme="MenuTheme.Dark" DefaultSelectedKeys=@(new[]{"1"}) Mode="MenuMode.Inline">
             <MenuItem Key="1">
                 <Icon Type="pie-chart" Theme="outline" />
@@ -43,6 +44,7 @@
                 <Icon Type="file" Theme="outline" />
             </MenuItem>
         </Menu>
+        </Affix>
     </Sider>
     <Layout Class="site-layout">
         <Header Class="site-layout-background" Style=" padding: 0 ;"></Header>

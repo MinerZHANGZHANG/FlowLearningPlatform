@@ -13,8 +13,6 @@ namespace FlowLearningPlatform
 
         private string _authTokenName=string.Empty;
 
-        private bool _isPrerendering = true;
-
         public CustomAuthenticationStateProvider(
             ILogger<CustomAuthenticationStateProvider> logger
             ,ILocalStorageService localStorageService
@@ -27,16 +25,11 @@ namespace FlowLearningPlatform
         }
         public override async Task<AuthenticationState> GetAuthenticationStateAsync()
         {
-            if (_isPrerendering)
-            {
-                var identity = new ClaimsIdentity();
-
-                var user = new ClaimsPrincipal(identity);
-                var state = new AuthenticationState(user);
-
-                return state;
-            }
-            else
+            //Blazor 服务器将呈现网页 2 次，第一次在服务器中，
+            //第二次在浏览器中。由于浏览器存储在服务器中不可用，
+            //因此当 Blazor 首次尝试呈现页面时，需要将浏览器存储访问代码包装在 try catch 中。
+            //如果不这样做，则会收到错误。
+            try
             {
                 string authToken = await _localStorageService.GetItemAsStringAsync(_authTokenName);
 
@@ -61,51 +54,28 @@ namespace FlowLearningPlatform
                 // NotifyAuthenticationStateChanged(Task.FromResult(state));
                 return state;
             }
-        }
-
-        // Method to be called when the client-side rendering is complete
-        public async Task MarkAsClientRendered()
-        {
-            _isPrerendering = false;
-            var state= await GetAuthenticationStateAsync();
-            NotifyAuthenticationStateChanged(Task.FromResult(state));
-        }
-
-        public async Task UpdateAuthStateAsync()
-        {
-            string authToken = await _localStorageService.GetItemAsStringAsync(_authTokenName);
-
-            var identity = new ClaimsIdentity();
-
-            if (!string.IsNullOrEmpty(authToken))
+            catch
             {
-                try
-                {
-                    _logger.LogInformation("哈哈哈");
-                    identity = new ClaimsIdentity(ParseClaimFromJwt(authToken), "jwt");
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex.Message);
-                    await _localStorageService.RemoveItemAsync(_authTokenName);
-                    identity = new ClaimsIdentity();
-                }
+                var identity = new ClaimsIdentity();
+
+                var user = new ClaimsPrincipal(identity);
+                var state = new AuthenticationState(user);
+
+                return state;
             }
-            var user = new ClaimsPrincipal(identity);
-            var state = new AuthenticationState(user);
-
-            NotifyAuthenticationStateChanged(Task.FromResult(state));
 
         }
 
-        [Obsolete]
-        public void MarkUserAsAuthenticated(string account)
+        public void Login()
         {
-            var authenticatedUser = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.Name, account) }, "jwt"));
-            var authState = Task.FromResult(new AuthenticationState(authenticatedUser));
-            NotifyAuthenticationStateChanged(authState);
+            NotifyAuthenticationStateChanged( GetAuthenticationStateAsync());
         }
 
+        public async Task Logout()
+        {
+            await _localStorageService.RemoveItemAsync(_authTokenName);
+            NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+        }
 
         private byte[] ParseBase64WithoutPadding(string base64)
         {

@@ -20,6 +20,8 @@ namespace FlowLearningPlatform.Data
         public DbSet<SchoolType> SchoolTypes { get; set; }
         public DbSet<SubmissionType> SubmissionTypes { get; set; }
 
+        public DbSet<UserCourse> UserCourses { get; set; }  
+
         public DataContext(DbContextOptions<DataContext> options) : base(options)
         {
 
@@ -46,6 +48,11 @@ namespace FlowLearningPlatform.Data
                 .HasOne(s => s.DepartmentType).WithMany()
                 .HasForeignKey(f => f.DepartmentTypeId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Course>()
+                .HasMany(e => e.Users)
+                .WithMany(e => e.Courses)
+                .UsingEntity<UserCourse>();
 
             modelBuilder.Entity<FilePurposeType>().HasData(
                 new FilePurposeType() { FilePurposeTypeId = Guid.NewGuid(), Name = "作业发布" },

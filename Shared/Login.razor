@@ -5,32 +5,44 @@
 @inject ILocalStorageService LocalStorageService
 @inject IConfiguration Configuration
 
-<Form Model="@model"   
-      OnFinish="OnFinish"
-      OnFinishFailed="OnFinishFailed"
-      LabelColSpan="8"
-      WrapperColSpan="16">
-    <FormItem>
-        <Input @bind-Value="@context.StudentNumber" />
-    </FormItem>
-    <FormItem>
-        <InputPassword @bind-Value="@context.Password" />
-    </FormItem>
-    <FormItem WrapperColOffset="8" WrapperColSpan="16">
-        <Checkbox @bind-Value="context.RememberMe">记住我</Checkbox>
-    </FormItem>
-    <FormItem WrapperColOffset="8" WrapperColSpan="16">
-        <Button Type="@ButtonType.Primary" HtmlType="submit">
-           登录
-        </Button>
-        <Button Type="@ButtonType.Primary" @onclick="ToRegister">
-           注册
-        </Button>
-    </FormItem>
-</Form>
+<Modal Title="登录/注册"
+Visible="true"
+       Centered="true"
+       DestroyOnClose="true"
+       OnCancel="()=>OnClose?.Invoke()"
+       Footer="null">
+    <Form Model="@model"
+          OnFinish="OnFinish"
+          OnFinishFailed="OnFinishFailed"
+          LabelColSpan="8"
+          WrapperColSpan="16">
+        <FormItem>
+            <Input @bind-Value="@context.StudentNumber" />
+        </FormItem>
+        <FormItem>
+            <InputPassword @bind-Value="@context.Password" />
+        </FormItem>
+        <FormItem WrapperColOffset="8" WrapperColSpan="16">
+            <Checkbox @bind-Value="context.RememberMe">记住我</Checkbox>
+        </FormItem>
+        <FormItem WrapperColOffset="8" WrapperColSpan="16">
+            <Button Type="@ButtonType.Primary" HtmlType="submit">
+                登录
+            </Button>
+            <Button Type="@ButtonType.Primary" @onclick="(_)=>ToRegister()">
+                注册
+            </Button>
+        </FormItem>
+    </Form>
+</Modal>
+
+
 
 
 @code {
+    [Parameter]
+    public Action OnClose { get; set; }
+
     private Models.Form.UserLogin model = new();
     private string _authTokenName="authToken";
 
@@ -48,26 +60,29 @@
             if (!string.IsNullOrEmpty(response.Data))
             {
                 // 写入本地存储
-                LocalStorageService.SetItemAsync(_authTokenName,response.Data);
-                //(AuthenticationStateProvider as CustomAuthenticationStateProvider).MarkUserAsAuthenticated("ww");
+                await LocalStorageService.SetItemAsync(_authTokenName,response.Data);
+                AuthService.RefreshAuthState();
             }
+            OnClose?.Invoke();;
             await MessageService.Success("登录成功!");
+           
         }
         else
         {
             await MessageService.Error(response.Message);
         }
-       
+
 
     }
 
     private void OnFinishFailed(EditContext editContext)
     {
-        Console.WriteLine($"Failed:{JsonSerializer.Serialize(model)}");
+        
     }
 
     private void ToRegister()
     {
-        NavigationManager.NavigateTo("/register",true);    
+        OnClose?.Invoke();
+        NavigationManager.NavigateTo("/register");    
     }
 }

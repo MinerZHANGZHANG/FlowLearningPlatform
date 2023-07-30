@@ -20,9 +20,6 @@
             var result = await _context.SchoolTypes.OrderBy(x => x.Name).ToListAsync();
             return result;
         }
-
       
     }
-
-
 }

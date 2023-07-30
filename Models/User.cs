@@ -1,5 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Security.Claims;
+using System.Text.Json.Serialization;
 
 namespace FlowLearningPlatform.Models
 {
@@ -25,5 +27,22 @@ namespace FlowLearningPlatform.Models
         public string? Email { get; set; } = string.Empty;
         public DateTime? Brithday { get; set; }
         public string? Description { get; set; } = string.Empty;
+
+        public List<Course> Courses { get; set; }
+
+        public ClaimsPrincipal ToClaimsPrincipal() =>
+            new(new ClaimsIdentity(new Claim[]
+            {
+                new(ClaimTypes.Name,Name),
+                //new(ClaimTypes.Hash,PasswordHash.ToString()),
+                new(ClaimTypes.Role,RoleType.RoleTypeId.ToString()),
+            }, "jwt"));
+
+        public static User FromClaimsPrincipal(ClaimsPrincipal principal) => new()
+        {
+            Name = principal.FindFirstValue(ClaimTypes.Name),
+            //PasswordHash = principal.FindFirstValue(ClaimTypes.Hash)
+            RoleTypeId =Guid.Parse(principal.FindFirstValue(ClaimTypes.Role)),
+        };
     }
 }

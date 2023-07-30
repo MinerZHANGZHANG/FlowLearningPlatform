@@ -1,0 +1,88 @@
+﻿@inject IAuthService AuthService
+@inject NavigationManager NavigationManager
+@implements IDisposable
+
+<AuthorizeView>
+	<Authorized>
+        <Dropdown Placement="@Placement.Bottom">
+            <Overlay>
+                <Menu>
+                    <MenuItem>
+                        <a @onclick="(_)=>ManagerAssignment()">作业管理</a>
+                    </MenuItem>
+                    <MenuItem>
+                        <a @onclick="(_)=>Profile()">个人资料</a>
+                    </MenuItem>
+                    <MenuItem>
+                        <a @onclick="(_)=>Logout()">注销</a>
+                    </MenuItem>
+                </Menu>
+
+            </Overlay>
+            <ChildContent>
+                <Button>
+                    Hello, @context.User.Identity?.Name!
+                </Button>
+            </ChildContent>
+        </Dropdown>
+        
+       
+	</Authorized>
+	<Authorizing>
+        <Icon Type="loading" Theme="outline" />
+	</Authorizing>
+	<NotAuthorized>
+        <Button Icon="plus" Type="primary" @onclick="()=> _modalOpen=true">
+            登录
+        </Button>
+        @if (_modalOpen)
+        {
+            <Login OnClose="()=>CloseModal()" />
+        }
+        
+	</NotAuthorized>
+</AuthorizeView>
+
+
+@code
+{
+    private bool _modalOpen{ get; set; } = false;
+
+    private async void Logout()
+    {
+        await  AuthService.Logout();
+        NavigationManager.NavigateTo("/");
+    }
+
+    private void Profile()
+    {
+        NavigationManager.NavigateTo("/profile");
+    }
+
+    private void ManagerAssignment()
+    {
+        NavigationManager.NavigateTo("/course");
+    }
+
+    private void CloseModalByLocation(object sender, LocationChangedEventArgs e)
+    {
+        CloseModal();
+    }
+
+    private void CloseModal()
+    {
+        _modalOpen = false;
+        StateHasChanged();
+    }
+    protected override void OnInitialized()
+    {
+        NavigationManager.LocationChanged += CloseModalByLocation;
+        base.OnInitialized();
+    }
+
+    void IDisposable.Dispose()
+    {
+        // Unsubscribe from the event when our component is disposed
+        NavigationManager.LocationChanged -= CloseModalByLocation;
+    }
+}

@@ -33,21 +33,22 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IWorkService, WorkService>();
 builder.Services.AddScoped<IDepartmentService, DepartmentService>();
 builder.Services.AddScoped<ISchoolService, SchoolService>();
+builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddAntDesign();
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters=new()
-        {
-            ValidateIssuerSigningKey = true,
-            ValidateIssuer = false,
-            ValidateAudience = false,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8
-            .GetBytes(builder.Configuration
-            .GetSection("AppSettings:Token").Value)) // Replace with your secret key
-        };
+//builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+//    .AddJwtBearer(options =>
+//    {
+//        options.TokenValidationParameters=new()
+//        {
+//            ValidateIssuerSigningKey = true,
+//            ValidateIssuer = false,
+//            ValidateAudience = false,
+//            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8
+//            .GetBytes(builder.Configuration
+//            .GetSection("AppSettings:Token").Value)) // Replace with your secret key
+//        };
     
-    });
+//    });
 
 var app = builder.Build();
 

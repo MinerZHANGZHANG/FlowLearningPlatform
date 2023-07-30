@@ -3,6 +3,7 @@
 @inject NavigationManager NavigationManager
 @inject IAuthService AuthService
 @inject ISchoolService SchoolService
+@inject IRoleService RoleService
 @inject IDepartmentService DepartmentService
 
 <div>
@@ -27,12 +28,20 @@
                       OnFinishFailed="OnValidateFailed">
                     <FormItem Label="学号">
                         <Text>输入11位学号(如20001110111)</Text>
-                        <Input @bind-Value="@context.StudentNumber" />
-                        
+                        <Input @bind-Value="@context.StudentNumber" />                      
                     </FormItem>
                     <FormItem Label="生日">
                         <Text>选择生日</Text>
                         <DatePicker TValue="DateTime" Picker="@DatePickerType.Date" @bind-Value="@context.Brithday" />
+                    </FormItem>
+                    <FormItem Label="身份">
+                        <Text>选择用户身份</Text>
+                        <RadioGroup @bind-Value="@context.RoleId">
+                            @foreach (var item in @_roleOptions)
+                            {
+                                <Radio Value="item.Item1">@item.Item2</Radio>
+                            }
+                        </RadioGroup>
                     </FormItem>
                     <FormItem WrapperColOffset="8" WrapperColSpan="16">
                         <Button Type="@ButtonType.Primary" HtmlType="submit">
@@ -94,6 +103,10 @@
                     </FormItem>
                 </Form>
                 break;
+
+            default:
+
+                break;
         }
     }
     else
@@ -114,33 +127,43 @@
 @code {
     private int _progressCurrent=0;
     private bool _isFinish = false;
-    private string _userId;
+    private string _userId="";
 
     private List<CascaderNode> _cascaderNodes = new();
+    private List<(string, string)> _roleOptions = new();
 
-    protected override async Task OnParametersSetAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        List<SchoolType> _schoolTypes = await SchoolService.GetAllAsync();
-
-        foreach (var school in _schoolTypes)
+        if (firstRender)
         {
-            var departments = await DepartmentService.GetDepartmentBySchool(school);
-            var tempList = new List<CascaderNode>();
-            if (departments != null)
-            {              
-                foreach (var department in departments)
-                {
-                    tempList.Add(new() { Label = department.Name, Value = department.DepartmentTypeId.ToString() });
-                }
-            }
-            _cascaderNodes.Add(new() { Label = school.Name, Value = school.SchoolTypeId.ToString(), Children = tempList });
-        }
+            List<SchoolType> schoolTypes = await SchoolService.GetAllAsync();
 
+            foreach (var school in schoolTypes)
+            {
+                var departments =await DepartmentService.GetDepartmentBySchool(school);
+                var tempList = new List<CascaderNode>();
+                if (departments != null)
+                {
+                    foreach (var department in departments)
+                    {
+                        tempList.Add(new() { Label = department.Name, Value = department.DepartmentTypeId.ToString() });
+                    }
+                }
+                _cascaderNodes.Add(new() { Label = school.Name, Value = school.SchoolTypeId.ToString(), Children = tempList });
+            }
+
+            List<RoleType> roleTypes = await RoleService.GetAllAsync();
+            foreach (var role in roleTypes)
+            {
+                _roleOptions.Add((role.RoleTypeId.ToString(), role.Name));
+            }
+            StateHasChanged();
+        }
     }
 
 
     #region --FormHandle--
-    private Form<IdentityVal> _validateFrom;
+    private Form<IdentityVal> _validateFrom=new();
     private IdentityVal _validateModel=new() { Brithday=new DateTime(2000,1,1)};
     private async void OnValidateSuccess(EditContext context)
     {
@@ -208,6 +231,6 @@
 
     private void BackToIndex()
     {
-        NavigationManager.NavigateTo("/index");
+        NavigationManager.NavigateTo("/");
     }
 }
