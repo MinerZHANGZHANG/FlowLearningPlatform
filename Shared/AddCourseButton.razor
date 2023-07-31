@@ -1,0 +1,127 @@
+﻿@inject ISchoolService SchoolService
+@inject IUserService UserService
+@inject IDepartmentService DepartmentService
+@inject ICourseService CourseService
+@inject IMessageService MessageService
+
+<Button Icon="plus" Type="primary" @onclick="_=>open()">课程添加</Button>
+<Drawer Closable="true" Width="720" Visible="@visible" Title='("Submit from in Drawer")' OnClose="_=>close()">
+    <Template style="height:90%">
+        <Form @ref="_form" Model="@_addCourse"
+              OnFinish="OnAddCourseFinish" Context="addCourse">
+            <DataAnnotationsValidator />
+            <FormItem Label="课程序号">
+                <Input @bind-Value="@addCourse.CourseNumber" />
+            </FormItem>
+            <FormItem Label="课程名称">
+                <Input @bind-Value="@addCourse.Name" />
+            </FormItem>
+            <FormItem Label="课程描述">
+                <Input @bind-Value="@addCourse.Description" />
+            </FormItem>
+            <FormItem Label="专业选择">
+                <Cascader SelectedNodesChanged="OnDepartmentIdChanged" Options="@_cascaderNodes" @bind-Value="@addCourse.DepartmentTypeId" />
+            </FormItem>
+            <ValidationSummary />
+            <FormItem Label="人员添加">
+                <Select Mode="multiple"
+                        Placeholder="Please select"
+                        TItemValue="string"
+                        TItem="string"
+                        OnSelectedItemsChanged="OnSelectedItemsChangedHandler"
+                        Style="width: 100%; margin-bottom: 8px;"
+                        EnableSearch
+                        AllowClear>
+                    <SelectOptions>
+                        @foreach (var item in options)
+                        {
+                            <SelectOption TItemValue="string" TItem="string" Value=@item.Item2 Label=@item.Item1 />
+                        }
+                    </SelectOptions>
+                </Select>
+            </FormItem>
+            <FormItem WrapperColOffset="8" WrapperColSpan="16">
+                <Button Type="@ButtonType.Primary" HtmlType="submit">
+                    确认
+                </Button>
+            </FormItem>
+        </Form>
+    </Template>
+</Drawer>
+
+@code {
+    bool visible = false;
+
+    void open()
+    {
+        this.visible = true;
+    }
+
+    void close()
+    {
+        this.visible = false;
+    }
+
+    private AddCourse _addCourse = new();
+    private Form<AddCourse> _form;
+    private async void OnAddCourseFinish()
+    {
+        var response = await CourseService.AddAsync(_addCourse);
+        if (response.Success)
+        {
+            _form.Reset();
+            close();
+            StateHasChanged();
+            await MessageService.Success("编辑成功!");
+        }
+        else
+        {
+            await MessageService.Error(response.Message);
+        }
+
+    }
+
+    private List<CascaderNode> _cascaderNodes = new();
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            List<SchoolType> schoolTypes = await SchoolService.GetAllAsync();
+
+            foreach (var school in schoolTypes)
+            {
+                var departments = await DepartmentService.GetDepartmentBySchool(school);
+                var tempList = new List<CascaderNode>();
+                if (departments != null)
+                {
+                    foreach (var department in departments)
+                    {
+                        tempList.Add(new() { Label = department.Name, Value = department.DepartmentTypeId.ToString() });
+                    }
+                }
+                _cascaderNodes.Add(new() { Label = school.Name, Value = school.SchoolTypeId.ToString(), Children = tempList });
+            }
+
+        }
+    }
+
+    List<(string, string)> options = new();
+
+    private async void OnDepartmentIdChanged(CascaderNode[] cascaders)
+    {
+        var users = await UserService.GetByDepartmentIdAsync(cascaders[1].Value);
+        foreach (var user in users)
+        {
+            options.Add((user.Name, user.UserId.ToString()));
+        }
+    }
+
+    private void OnSelectedItemsChangedHandler(IEnumerable<string> values)
+    {
+        if (values != null && values.Count() > 0)
+        {
+            _addCourse.UsersId = values.ToList();
+        }
+
+    }
+}

@@ -21,7 +21,7 @@
             </Overlay>
             <ChildContent>
                 <Button>
-                    Hello, @context.User.Identity?.Name!
+                    你好 @context.User.FindFirst(System.Security.Claims.ClaimTypes.Role).Value @context.User.Identity?.Name !
                 </Button>
             </ChildContent>
         </Dropdown>

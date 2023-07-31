@@ -1,17 +1,85 @@
 ﻿@layout ManagerLayout
 @page "/Course"
 
+@inject ICourseService CourseService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+
 <PageTitle>课程管理</PageTitle>
 
-<AuthorizeView>
+<AuthorizeView Roles="管理员">
 	<Authorized>
+		<Layout>
+			<Header>
+                <div style="float:right">
+					<AddCourseButton></AddCourseButton>
+				</div>
+			</Header>
+			<Content>
 
+			</Content>
+		</Layout>
+		
 	</Authorized>
-	<NotAuthorized>
-		<Empty></Empty>
-	</NotAuthorized>
+</AuthorizeView>
+
+<AuthorizeView Roles="教师,学生">
+    <Authorized>
+		@if (_courses != null && _courses.Count > 0)
+		{
+			foreach (var course in _courses)
+			{
+				
+				<Card Hoverable="true" Title="@course.Name" >
+					<Extra>
+						<a	@onclick="()=>NavigateToDetail(course.CourseId.ToString())">查看</a>
+					</Extra>
+				</Card>
+			}
+		}
+		else
+		{
+			<Empty></Empty>
+		}
+	</Authorized>
 </AuthorizeView>
 
 @code {
 
+	private List<Models.Course> _courses=new();
+	private string userId;
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		if (firstRender)
+		{
+			await GetUserClaimsId();
+			if (!string.IsNullOrEmpty(userId))
+			{
+				var response = await CourseService.GetByUserIdAsync(userId);
+
+				if (response.Success && response.Data != null)
+				{
+					_courses = response.Data;
+				}
+				StateHasChanged();
+			}
+		}
+		await base.OnAfterRenderAsync(firstRender);
+	}
+
+
+	private async Task GetUserClaimsId()
+	{
+		var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+		var user = authState.User;
+		if (user.Identity.IsAuthenticated)
+		{
+			userId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value;
+		}
+	}
+
+	private void NavigateToDetail(string courseId)
+	{
+		NavigationManager.NavigateTo($"course/{courseId}");
+	}
 }

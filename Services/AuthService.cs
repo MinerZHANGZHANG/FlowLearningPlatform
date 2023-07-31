@@ -13,7 +13,7 @@ namespace FlowLearningPlatform.Services
 	{
         Task<ServiceResponse<bool>> ValidateUser(IdentityVal identityVal);
         Task<ServiceResponse<string>> Register(IdentityVal identityVal,RegisterSecondStep baseInfo,ExtraInfo extraInfo);
-	    Task<ServiceResponse<string>> Login(UserLogin userLogin);
+	    Task<ServiceResponse<string>> LoginAsync(UserLogin userLogin);
         Task Logout();
         void RefreshAuthState();
     }
@@ -25,6 +25,8 @@ namespace FlowLearningPlatform.Services
         private readonly IConfiguration _configuration;
         private readonly AuthenticationStateProvider _authenticationState;
 
+        private bool _isRun = false;
+
         public AuthService(DataContext context,ILogger<AuthService> logger, IConfiguration configuration,AuthenticationStateProvider authenticationState)
         {
             _context = context;
@@ -35,8 +37,14 @@ namespace FlowLearningPlatform.Services
 
         public async Task<ServiceResponse<string>> Register(IdentityVal identityVal, RegisterSecondStep baseInfo, ExtraInfo extraInfo)
         {
+            if (_isRun)
+            {
+                return new() { Success=false};
+            }
+
             try
             {
+                _isRun = true;
                 byte[] passwordHash;
                 byte[] passwordSalt;
                 Guid defaultRoleUid = _context.RoleTypes.FirstOrDefault().RoleTypeId;
@@ -51,7 +59,7 @@ namespace FlowLearningPlatform.Services
                     RegTime = DateTime.Now,
 
                     DepartmentTypeId = Guid.Parse(baseInfo.DepartmentTypeId),
-                    RoleTypeId = defaultRoleUid,
+                    RoleTypeId = Guid.Parse(identityVal.RoleId),
                     StudentNumber = identityVal.StudentNumber,
 
                     PhoneNumber = extraInfo.PhoneNumber,
@@ -63,26 +71,33 @@ namespace FlowLearningPlatform.Services
                 await _context.Users.AddAsync(newUser);
                 await _context.SaveChangesAsync();
 
-                return new() { Data = newUser.UserId.ToString(), Message = "注册成功" };
+				_isRun =false;
+				return new() { Data = newUser.UserId.ToString(), Message = "注册成功" };
             }
             catch (Exception ex)
             {
                 _logger.LogError($"用户注册时发生错误：{ex.Message}");
-                return new() { Data = string.Empty, Message = $"注册失败", Success = false };
+				_isRun = false;
+				return new() { Data = string.Empty, Message = $"注册失败", Success = false };
             }
         }
 
         public async Task<ServiceResponse<bool>> ValidateUser(IdentityVal identityVal)
         {
-           
-            ServiceResponse<bool> result = new()
+			if (_isRun)
+			{
+				return new() { Success = false };
+			}
+
+			ServiceResponse<bool> result = new()
             {
                 Data = true,
                 Message = "验证成功",
             };
-
-            bool isExist = await _context.Users.AsNoTracking().AnyAsync(user => user.StudentNumber.Equals(identityVal.StudentNumber));
-            if (isExist)
+			_isRun =true;
+			bool isExist = await _context.Users.AsNoTracking().AnyAsync(user => user.StudentNumber.Equals(identityVal.StudentNumber));
+			_isRun = false;
+			if (isExist)
             {
                 result.Data = false;
                 result.Message = "这个学号已经注册过了";
@@ -103,12 +118,17 @@ namespace FlowLearningPlatform.Services
 
 
 
-        public async Task<ServiceResponse<string>> Login(UserLogin userLogin)
+        public async Task<ServiceResponse<string>> LoginAsync(UserLogin userLogin)
         {
-            ServiceResponse<string> response = new();
-            User user = await _context.Users.FirstOrDefaultAsync(u => u.StudentNumber.Equals(userLogin.StudentNumber));
-
-            if (user==null)
+			if (_isRun)
+			{
+				return new() { Success = false };
+			}
+			ServiceResponse<string> response = new();
+			_isRun = true;
+			User user = await _context.Users.Include(u=>u.RoleType).FirstOrDefaultAsync(u => u.StudentNumber.Equals(userLogin.StudentNumber));
+			_isRun = false;
+			if (user==null)
             {
                 response.Message = "未注册的学号";
                 response.Success = false;
@@ -142,6 +162,7 @@ namespace FlowLearningPlatform.Services
             {
                 new Claim(ClaimTypes.NameIdentifier,user.UserId.ToString()),
                 new Claim(ClaimTypes.Name,user.Name),
+                new Claim(ClaimTypes.Role,user.RoleType.Name)
             };
 
             var key = new SymmetricSecurityKey(System.Text.Encoding.UTF8

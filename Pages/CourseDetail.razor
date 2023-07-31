@@ -1,0 +1,19 @@
+﻿@page "/course/{CourseId:guid}"
+
+@inject ICourseService CourseService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+
+<PageTitle>课程信息</PageTitle>
+
+@*
+	在这里加一个课程基本介绍
+	加一个作业列表根据用户身份不同而不同
+	右上角老师添加布置作业按钮
+	跳转作业布置和提交界面
+*@
+
+@code {
+	[Parameter]
+	public Guid CourseId{ get; set; }
+}
