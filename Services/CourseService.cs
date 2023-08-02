@@ -1,5 +1,6 @@
 ﻿using FlowLearningPlatform.Models;
 using FlowLearningPlatform.Models.Form;
+using System.Collections.Generic;
 
 namespace FlowLearningPlatform.Services
 {
@@ -14,23 +15,31 @@ namespace FlowLearningPlatform.Services
 
     public class CourseService : ICourseService
     {
-        private readonly DataContext _context;
-        private readonly ILogger<CourseService> _logger;
+		private readonly IDbContextFactory<DataContext> _dbContextFactory;
+		private readonly ILogger<CourseService> _logger;
 
         private bool isRun = false;
-        public CourseService(DataContext context,ILogger<CourseService> logger)
+        public CourseService(IDbContextFactory<DataContext> dbContextFactory,ILogger<CourseService> logger)
         {
-            _context = context;
-            _logger = logger;
+			_dbContextFactory = dbContextFactory;
+			_logger = logger;
         }
 
         public async Task<List<Course>> GetAllAsync(int pageIndex=0, int pageCount=10)
         {
-            var result = await _context.Courses
-                .OrderBy(x => x.CourseId)
-                .Skip(pageIndex*pageCount)
-                .Take(pageCount)
-                .ToListAsync();
+			List<Course> result = new();
+
+			using (var _context=await _dbContextFactory.CreateDbContextAsync())
+            {
+				result = await _context.Courses
+				.AsNoTracking()
+				.Include(c => c.DepartmentType)
+				.OrderBy(x => x.CourseId)
+				.Skip(pageIndex * pageCount)
+				.Take(pageCount)
+				.ToListAsync();
+			}
+				
             return result;
         }
 
@@ -61,10 +70,14 @@ namespace FlowLearningPlatform.Services
                 {
                     userCourses.Add(new UserCourse() { UserId = Guid.Parse(userId), CourseId = courseId });
                 }
+                using(var _context = await _dbContextFactory.CreateDbContextAsync())
+                {
+					await _context.Courses.AddAsync(course);
+					await _context.AddRangeAsync(userCourses);
+					await _context.SaveChangesAsync();
+				}
 
-                await _context.Courses.AddAsync(course);
-                await _context.AddRangeAsync(userCourses);
-                await _context.SaveChangesAsync();
+
 
                 isRun = false;
 
@@ -96,12 +109,17 @@ namespace FlowLearningPlatform.Services
                 isRun = true;
                 
                 Guid uid= Guid.Parse(userId);
-                var user = await _context.Users
-                     .AsNoTracking()
-                     .Include(u => u.Courses)
-                     .FirstOrDefaultAsync(u => u.UserId == uid);                  
+				using (var _context = await _dbContextFactory.CreateDbContextAsync())
+                {
+					var user = await _context.Users
+					 .AsNoTracking()
+					 .Include(u => u.Courses)
+					 .FirstOrDefaultAsync(u => u.UserId == uid);
+					response.Data = user.Courses;
+				}
+					                
                     
-                response.Data = user.Courses;
+               
 
                 isRun = false;
 
@@ -131,12 +149,20 @@ namespace FlowLearningPlatform.Services
 			{
 				isRun = true;
 
-				var course=await _context.Courses.FindAsync(courseId);
-                if (course != null)
+				using (var _context = await _dbContextFactory.CreateDbContextAsync())
                 {
-					response.Success = true;
-					response.Data = course;
+					var course = await _context.Courses
+					.Include(c => c.DepartmentType)
+					.ThenInclude(d => d.SchoolType)
+					.FirstOrDefaultAsync(c => c.CourseId.Equals(courseId));
+					if (course != null)
+					{
+						response.Success = true;
+						response.Data = course;
+					}
+
 				}
+					
 
 				isRun = false;
 				return response;

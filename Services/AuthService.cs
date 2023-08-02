@@ -191,5 +191,22 @@ namespace FlowLearningPlatform.Services
         {
           await  (_authenticationState as CustomAuthenticationStateProvider).Logout();
         }
+
+        public static bool TryGetUserFromClaim(ClaimsPrincipal User,out Guid userId,out string userName,out string userRole)
+        {
+            userId = Guid.Empty;
+            userName = string.Empty;
+            userRole=string.Empty;
+           if (User != null)
+            {
+                if(Guid.TryParse( User.FindFirstValue(ClaimTypes.NameIdentifier), out userId))
+                {
+                    userName = User.FindFirstValue(ClaimTypes.Name);
+                    userRole = User.FindFirstValue(ClaimTypes.Role);
+                    return true;
+				}
+			}
+            return false;
+        }
     }
 }

@@ -1,19 +1,112 @@
-﻿@page "/course/{CourseId:guid}"
+﻿@page "/course/{CourseId:guid}/{UserId:guid}"
 
 @inject ICourseService CourseService
-@inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
+@inject IAssignmentService AssignmentService
+@using AntDesign.TableModels
 
 <PageTitle>课程信息</PageTitle>
-
 @*
 	在这里加一个课程基本介绍
 	加一个作业列表根据用户身份不同而不同
 	右上角老师添加布置作业按钮
 	跳转作业布置和提交界面
 *@
+<Collapse DefaultActiveKey="@(new[]{"0"})">
+	<Panel Header="课程信息" Key="0">
+		@if(_course!=null)
+		{
+			<Descriptions Bordered Column="@column" Size="@DescriptionsSize.Small">
+				<DescriptionsItem Title="名称">@_course.Name</DescriptionsItem>
+				<DescriptionsItem Title="编号">@_course.CourseNumber</DescriptionsItem>				
+				<DescriptionsItem Title="院系">@_course.DepartmentType.SchoolType.Name</DescriptionsItem>
+				<DescriptionsItem Title="专业">@_course.DepartmentType.Name</DescriptionsItem>
+				<DescriptionsItem Title="描述">@_course.Description</DescriptionsItem>
+			</Descriptions>
+		}
+		else
+		{
+			<Empty/>
+		}
+
+	</Panel>
+</Collapse>
+
+<AuthorizeView Context="authorContext" Roles="学生">
+	<Authorized>
+		<Table TItem="StudentAssignmentState" DataSource="@_assignmentStates" OnRowClick="OnRowClick">
+			<PropertyColumn Property="a=>a.Title" Title="名称">
+				<p>@context.Title</p>
+			</PropertyColumn>
+			<PropertyColumn Property="a=>a.UpdateTime" Title="发布时间">
+				<p>@context.Title</p>
+			</PropertyColumn>
+			<PropertyColumn Sortable="true" Property="a=>a.Deadline" Title="截止时间">
+				<p>@context.Deadline.ToString("yy年MM月dd日")</p>
+			</PropertyColumn>
+			<PropertyColumn Property="a=>a.SubmissionCount" Title="状态">
+				@if (context.Deadline > DateTime.Now)
+				{
+					<Tag Color="@PresetColor.Blue.ToString()">已截止</Tag>
+				}
+				@if (context.SubmissionCount <= 0)
+				{
+					<Tag Color="@PresetColor.Red.ToString()">未提交</Tag>
+				}
+				else
+				{
+					<Tag Color="@PresetColor.Green.ToString()">已提交</Tag>
+				}
+			</PropertyColumn>
+			<PropertyColumn Property="a=>a.SubmissionCount" Title="提交次数">
+				<p>@context.SubmissionCount</p>
+			</PropertyColumn>
+			<ActionColumn Title="操作">
+				<Button>提交作业</Button>
+			</ActionColumn>
+		</Table>
+	</Authorized>
+</AuthorizeView>
+
 
 @code {
 	[Parameter]
 	public Guid CourseId{ get; set; }
+	[Parameter]
+	public Guid UserId { get; set; }
+
+	private Models.Course _course { get; set; }
+	private List<StudentAssignmentState> _assignmentStates { get; set; } = new();
+
+	protected override async Task OnParametersSetAsync() 
+	{
+		var courseResponse = await CourseService.GetAllByIdAsync(CourseId);
+		if (courseResponse.Success&&courseResponse.Data!=null)
+		{
+			_course = courseResponse.Data;
+		}
+
+		var assignmentStateResponse = await AssignmentService.GetStateByUserCourseAsync(UserId, CourseId);
+		if (assignmentStateResponse.Success && assignmentStateResponse.Data != null)
+		{
+			_assignmentStates = assignmentStateResponse.Data;
+		}
+
+		await base.OnParametersSetAsync();
+	}
+
+	private	void OnRowClick(RowData<StudentAssignmentState> row)
+	{
+		
+	}
+
+	private Dictionary<string, int> column = new Dictionary<string, int> 
+	{
+			{ "xxl", 3},
+			{ "xl", 3},
+			{ "lg", 2},
+			{ "md", 2},
+			{ "sm", 1},
+			{ "xs", 1}
+	};
 }
