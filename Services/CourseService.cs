@@ -11,6 +11,7 @@ namespace FlowLearningPlatform.Services
         Task<ServiceResponse<List<Course>>> GetByUserIdAsync(string UserId);
         Task<ServiceResponse<string>> AddAsync(AddCourse addCourse);
 
+
     }
 
     public class CourseService : ICourseService

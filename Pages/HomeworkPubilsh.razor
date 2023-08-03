@@ -1,11 +1,23 @@
 ﻿@layout ManagerLayout
-@page  "/homework/publish"
+@page "/course/{CourseId:guid}/publish"
+
+@inject ICourseService CourseService
+@inject IAssignmentService AssignmentService
+@inject IMessageService MessageService
 
 <h3>HomeworkPubilsh</h3>
 
-@*
-    增加Service类
-*@
+<AuthorizeView>
+    <Authorized>
+        @if (_authenticationState is not null)
+{
+    <p>你好 @_authenticationState.Result.User.FindFirst(System.Security.Claims.ClaimTypes.Name).Value</p>
+}
+
+    </Authorized>
+</AuthorizeView>
+
+
 <Form Model="@PublicHomework"
       LabelColSpan="8"
       WrapperColSpan="16"
@@ -18,9 +30,9 @@
     <FormItem Label="描述">
         <TextArea @bind-Value="@context.Description" />
     </FormItem>
-@*    <FormItem Label="所属课程">
-        <AutoComplete @bind-Value="@value" Options="@options" OptionFormat='x => $"{x.Value} City"' />
-    </FormItem>*@
+    <FormItem Label="课程号">
+        <Text>@CourseId.ToString()</Text>
+    </FormItem>
 
     <FormItem Label="立即发布">
         <Switch @bind-Value="@_publishImmediaty" />
@@ -53,7 +65,10 @@
     @if (_isFileLimited)
     {
         <div>
-@*            <Slider TValue="double" Min="1" Max="100"  @bind-Value="AddWorkParts[0].FileSizeLimite" />
+            
+@*          
+            其它逻辑
+            <Slider TValue="double" Min="1" Max="100"  @bind-Value="AddWorkParts[0].FileSizeLimite" />
             <AntDesign.InputNumber Min="1" Max="100"   Style="margin:0 16px;" @bind-Value="AddWorkParts[0].FileSizeLimite" TValue="double" />
             <p>(MB)</p>*@
             <hr>
@@ -134,21 +149,51 @@
 </Drawer>
 
 @code {
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? _authenticationState{ get; set; }
+
+    [Parameter]
+    public Guid CourseId { get; set; }
+    private Models.Course _course { get; set; } = new();
+
     public PublishHomework PublicHomework{ get; set; } =new();
     public AddAssignmentDivision AddWorkPart { get; set; } = new();
     public List<AddAssignmentDivision> AddWorkParts { get; set; } = new() { new() };
     private bool _publishImmediaty = true;
 
-    private void OnFinish(EditContext editContext)
-    {
 
+    protected override async Task OnParametersSetAsync()
+    {
+        var response = await CourseService.GetAllByIdAsync(CourseId);
+        if (response.Success)
+        {
+            _course = response.Data??new();
+        }
+
+        await base.OnParametersSetAsync();
+    }
+
+    private async void OnFinish(EditContext editContext)
+    {
+        PublicHomework.CourseId = CourseId;
+        PublicHomework.FileSetId = null;
+        var response= await AssignmentService.AddAssignment(PublicHomework);
+        if (response.Success)
+        {
+            await MessageService.Success("添加作业成功");
+        }
+        else
+        {
+            await MessageService.Error("添加作业失败，请联系管理员");
+        }
     }
     private void OnFinishFailed(EditContext editContext)
     {
 
     }
 
-        private void OnPartFinish(EditContext editContext)
+     private void OnPartFinish(EditContext editContext)
     {
 
     }

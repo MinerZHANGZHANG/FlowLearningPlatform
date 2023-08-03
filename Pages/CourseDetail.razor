@@ -7,7 +7,6 @@
 
 <PageTitle>课程信息</PageTitle>
 @*
-	在这里加一个课程基本介绍
 	加一个作业列表根据用户身份不同而不同
 	右上角老师添加布置作业按钮
 	跳转作业布置和提交界面
@@ -32,6 +31,13 @@
 	</Panel>
 </Collapse>
 
+<div>
+	<Divider></Divider>
+	<AuthorizeView Context="authorContext" Roles="教师">
+		<Button @onclick="()=>ToPublishPage(CourseId)">发布作业</Button>
+	</AuthorizeView>
+</div>
+@*教师也需要一个展示界面*@
 <AuthorizeView Context="authorContext" Roles="学生">
 	<Authorized>
 		<Table TItem="StudentAssignmentState" DataSource="@_assignmentStates" OnRowClick="OnRowClick">
@@ -39,13 +45,13 @@
 				<p>@context.Title</p>
 			</PropertyColumn>
 			<PropertyColumn Property="a=>a.UpdateTime" Title="发布时间">
-				<p>@context.Title</p>
+				<p>@context.UpdateTime.ToString("yy年MM月dd日")</p>
 			</PropertyColumn>
 			<PropertyColumn Sortable="true" Property="a=>a.Deadline" Title="截止时间">
 				<p>@context.Deadline.ToString("yy年MM月dd日")</p>
 			</PropertyColumn>
 			<PropertyColumn Property="a=>a.SubmissionCount" Title="状态">
-				@if (context.Deadline > DateTime.Now)
+				@if (context.Deadline < DateTime.Now)
 				{
 					<Tag Color="@PresetColor.Blue.ToString()">已截止</Tag>
 				}
@@ -62,7 +68,7 @@
 				<p>@context.SubmissionCount</p>
 			</PropertyColumn>
 			<ActionColumn Title="操作">
-				<Button>提交作业</Button>
+				<Button @onclick="()=>ToSubmissionPage(context.CourseId,context.SubmissionId)">提交作业</Button>
 			</ActionColumn>
 		</Table>
 	</Authorized>
@@ -72,6 +78,7 @@
 @code {
 	[Parameter]
 	public Guid CourseId{ get; set; }
+	// 替换成手动查询
 	[Parameter]
 	public Guid UserId { get; set; }
 
@@ -97,7 +104,17 @@
 
 	private	void OnRowClick(RowData<StudentAssignmentState> row)
 	{
-		
+
+	}
+
+	private void ToPublishPage(Guid courseId)
+	{
+		NavigationManager.NavigateTo($"/course/{courseId}/publish");
+	}
+
+	private void ToSubmissionPage(Guid courseId,Guid assignmentId)
+	{
+		NavigationManager.NavigateTo($"/course/{courseId}/submission/{assignmentId}");
 	}
 
 	private Dictionary<string, int> column = new Dictionary<string, int> 

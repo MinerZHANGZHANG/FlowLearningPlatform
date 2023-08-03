@@ -5,7 +5,7 @@
 @inject NavigationManager NavigationManager
 
 @inject IUserService UserService 
-
+@inject IMessageService MessageService
 
 @*
 	实现添加和删除逻辑
@@ -52,17 +52,19 @@
 											DataSource="@_usersNotInCourse"
 											LabelName="@nameof(SimpleUser.Name)"
 											ValueName="@nameof(SimpleUser.Id)"
-											EnableSearch>
+											EnableSearch
+											Mode="multiple"
+											@bind-Values="@_selectedUsersId">
 								</Select>
-
+								<Button OnClick="AddUserToCourse">添加上述用户</Button>
 							</Panel>
 							<Panel Header="删除" Key="1">
 								<AntList DataSource="@_usersInCourse" ItemLayout="ListItemLayout.Horizontal">
 									<ChildContent>
-												<ListItem>
+										<ListItem>
 											<p>@context.Name <a @onclick="()=>Remove(context.Id)">删除</a></p>
 
-												</ListItem>
+										</ListItem>
 									</ChildContent>
 									<LoadMore>
 
@@ -150,17 +152,22 @@
 	private async void GetUserWithCourseId(Guid courseId)
 	{
 		var _userWithCourses = await UserService.GetUserWithCourseAsync(courseId);
+		UpdateUserCourse(_userWithCourses);
+	}
+
+	private void UpdateUserCourse(List<UserWithCourse> userWithCourses)
+	{
 		_usersInCourse.Clear();
 		_usersNotInCourse.Clear();
-		foreach (var user in _userWithCourses)
+		foreach (var user in userWithCourses)
 		{
 			if (user.IsInCourse)
 			{
-				_usersInCourse.Add(new(){Id=user.UserId,Name=user.UserName});
+				_usersInCourse.Add(new() { Id = user.UserId, Name = user.UserName });
 			}
 			else
 			{
-				_usersNotInCourse.Add(new(){Id=user.UserId,Name=user.UserName});
+				_usersNotInCourse.Add(new() { Id = user.UserId, Name = user.UserName });
 			}
 			StateHasChanged();
 		}
@@ -176,6 +183,7 @@
 
 	void open(Guid courseId)
 	{
+		_currentCourseId = courseId;
 		this.visible = true;
 		GetUserWithCourseId(courseId);
 	}
@@ -185,8 +193,33 @@
 		this.visible = false;
 	}
 
-	public void Remove(Guid userId)
+	private Guid _currentCourseId;
+
+	public async void Remove(Guid userId)
 	{
-		// DeleteUser
+		// 弹窗判断下
+		var response = await UserService.RemoveUserFromCourse(_currentCourseId, new() { userId });
+		if (response.Success)
+		{
+			UpdateUserCourse(response.Data);
+			_selectedUsersId = new List<Guid>();
+			await MessageService.Success("成功删除用户!");
+		}
+	}
+
+	private IEnumerable<Guid> _selectedUsersId{ get; set; } = new List<Guid>();
+	private async void AddUserToCourse()
+	{
+		if (_selectedUsersId.Any())
+		{
+			var response = await UserService.AddUserToCourse(_currentCourseId, _selectedUsersId.ToList());
+			if (response.Success)
+			{
+				UpdateUserCourse(response.Data);
+				_selectedUsersId = new List<Guid>();
+				await MessageService.Success("成功添加用户!");
+			}
+		}
+		
 	}
 }

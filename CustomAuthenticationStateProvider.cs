@@ -29,6 +29,8 @@ namespace FlowLearningPlatform
             //第二次在浏览器中。由于浏览器存储在服务器中不可用，
             //因此当 Blazor 首次尝试呈现页面时，需要将浏览器存储访问代码包装在 try catch 中。
             //如果不这样做，则会收到错误。
+
+            // Todo:验证数据库是否存在这个人
             try
             {
                 string authToken = await _localStorageService.GetItemAsStringAsync(_authTokenName);

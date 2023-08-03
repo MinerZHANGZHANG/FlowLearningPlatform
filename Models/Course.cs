@@ -24,5 +24,7 @@ namespace FlowLearningPlatform.Models
         public List<Assignment> Assignments { get; set; }
 
         public List<User> Users { get; set; }
+
+        //前置课程s
     }
 }

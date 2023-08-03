@@ -10,14 +10,14 @@ namespace FlowLearningPlatform.Models.Form
         [StringLength(255)]
         public string Description { get; set; }=string.Empty;
         [Required]
-        public Course Course { get; set; }
+        public Guid CourseId { get; set; }
         [Required]
         public DateTime[] TimeRange { get; set; } = new DateTime[] { DateTime.Now, DateTime.Now.AddDays(10) };
 
-        public FileSet FileSet { get; set; }
-
         public bool AutoRename { get; set; }
-        public List<AssignmentDivision> Partworks { get; set; }
+        public Guid? FileSetId { get; set; }
+
+        public List<AssignmentDivision> AssignmentDivisions { get; set; }
 
         [JsonIgnore]
         public DateTime StartTime { get { return TimeRange[0]; }set { TimeRange[0] = value; } }

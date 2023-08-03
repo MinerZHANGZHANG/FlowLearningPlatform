@@ -1,5 +1,6 @@
-﻿@page "/homework/submission"
+﻿@page "/course/{CourseId:guid}/submission/{AssignmentId:guid}"
 @using Blazored.TextEditor
+@inject IUserService UserService
 
 <h3>Job Submission</h3>
 
@@ -8,6 +9,12 @@
     增加Service类
     有对富文本的保存和处理
 *@
+
+@if(_authenticationState is not null)
+{
+    <p>nihao @_authenticationState.Result.User.FindFirst(System.Security.Claims.ClaimTypes.Name).Value</p>
+}
+
 <BlazoredTextEditor @ref="@QuillHtml">
     <ToolbarContent>
         <select class="ql-header">
@@ -61,9 +68,16 @@
 <br />
 
 @code {
+    [Parameter]
+    public Guid AssignmentId { get; set; }
+    [Parameter]
+    public Guid CourseId { get; set; }
 
     BlazoredTextEditor QuillHtml;
     string QuillHTMLContent;
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? _authenticationState{ get; set; }
 
     public async void GetHTML()
     {

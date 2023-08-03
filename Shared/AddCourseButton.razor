@@ -4,6 +4,7 @@
 @inject ICourseService CourseService
 @inject IMessageService MessageService
 
+@*// TODO: 返回更新结果到父组件*@
 <Button Icon="plus" Type="primary" @onclick="_=>open()">课程添加</Button>
 <Drawer Closable="true" Width="720" Visible="@visible" Title='("Submit from in Drawer")' OnClose="_=>close()">
     <Template style="height:90%">
@@ -110,6 +111,7 @@
     private async void OnDepartmentIdChanged(CascaderNode[] cascaders)
     {
         var users = await UserService.GetByDepartmentIdAsync(cascaders[1].Value);
+        options.Clear();
         foreach (var user in users)
         {
             options.Add((user.Name, user.UserId.ToString()));
