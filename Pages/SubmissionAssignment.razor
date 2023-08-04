@@ -1,6 +1,13 @@
 ﻿@page "/course/{CourseId:guid}/submission/{AssignmentId:guid}"
+@layout ManagerLayout
 @using Blazored.TextEditor
 @inject IUserService UserService
+@inject IAssignmentService AssignmentService
+@inject IJSRuntime Js;
+@inject IMessageService MessageService
+@inject ISubmissionService SubmissionService
+@inject IFileService FileService
+@inject IWebHostEnvironment Environment
 
 <h3>Job Submission</h3>
 
@@ -15,7 +22,25 @@
     <p>nihao @_authenticationState.Result.User.FindFirst(System.Security.Claims.ClaimTypes.Name).Value</p>
 }
 
-<BlazoredTextEditor @ref="@QuillHtml">
+@*TODO:记录上一次提交结果*@
+
+<Descriptions Title="作业信息" Bordered Size="@DescriptionsSize.Small">
+    <DescriptionsItem Title="标题">@_assignment.Title</DescriptionsItem>
+    <DescriptionsItem Title="截止日期">@_assignment.Deadline.ToString("yyyy-MM-dd")</DescriptionsItem>
+    <DescriptionsItem Title="所属课程">@_assignment.Course.Name</DescriptionsItem>
+    @if (_assignment.FileSetId != null && _assignment.FileSetId != Guid.Empty)
+    {
+        <DescriptionsItem Title="作业文件">
+            <Button Icon="Download" OnClick="()=>DownloadFileSet(_assignment.FileSetId.Value)">下载</Button>
+        </DescriptionsItem>
+    }
+    
+</Descriptions>
+<Divider></Divider>
+<Text>
+    文本输入
+</Text>
+<BlazoredTextEditor @ref="@_quillHtml" Placeholder="输入文本信息">
     <ToolbarContent>
         <select class="ql-header">
             <option selected=""></option>
@@ -42,30 +67,29 @@
         <span class="ql-formats">
             <button class="ql-link"></button>
         </span>
+        <span class="ql-formats">
+            <button class="ql-script" value="sub"></button>
+            <button class="ql-align" value="center"></button>
+            <button class="ql-align" value="right"></button>
+
+            <button class="ql-code-block"></button>
+            <button class="ql-indent" value="+1"></button>
+        </span>
     </ToolbarContent>
-    <EditorContent>
-        <h4>This Toolbar works with HTML</h4>
-        <a href="http://BlazorHelpWebsite.com">
-            BlazorHelpWebsite.com
-        </a>
-    </EditorContent>
 </BlazoredTextEditor>
-<br />
-<button class="btn btn-primary"
-@onclick="GetHTML">
-    Get HTML
-</button>
-<button class="btn btn-primary"
-@onclick="SetHTML">
-    Set HTML
-</button>
-<br />
-<div>
-    <br />
-    @((MarkupString)QuillHTMLContent)
-    @QuillHTMLContent
-</div>
-<br />
+<Divider></Divider>
+<Text>文件提交</Text>
+<InputFile id="fileInput" OnChange="UploadFiles" hidden multiple />
+
+<Upload Name="files" FileList="fileList">
+    <label class="ant-btn" for="fileInput">
+        <Icon Type="upload" />
+        Click to Upload
+    </label>
+</Upload>
+
+<Divider></Divider>
+<Button OnClick="@FinishAssignment">提交作业</Button>
 
 @code {
     [Parameter]
@@ -73,25 +97,134 @@
     [Parameter]
     public Guid CourseId { get; set; }
 
-    BlazoredTextEditor QuillHtml;
-    string QuillHTMLContent;
+    private BlazoredTextEditor _quillHtml;
+    private string _quillHTMLContent;
 
     [CascadingParameter]
     private Task<AuthenticationState>? _authenticationState{ get; set; }
 
-    public async void GetHTML()
+
+    private Assignment _assignment=new();
+    private Models.Course _course = new();
+    protected override async Task OnParametersSetAsync()
     {
-        QuillHTMLContent = await this.QuillHtml.GetHTML();
+        var response = await AssignmentService.GetByIdAsync(AssignmentId);
+        if (response.Success)
+        {
+            _assignment =response.Data??new();
+            _course = _assignment.Course;
+        }       
+        await base.OnParametersSetAsync();
+    }
+
+
+    private void DownloadFileSet(Guid fileSetId)
+    {
+        // TODO
+    }
+
+    List<UploadFileItem> fileList = new List<UploadFileItem>();
+
+
+    IList<IBrowserFile> files = new List<IBrowserFile>();
+    List<BrowserFile> _browserFiles = new();
+    UploadFile _uploadFile = new();
+    private bool _isLoading = false;
+
+
+    private async void UploadFiles(InputFileChangeEventArgs e)
+    {
+        _browserFiles.Clear();
+        files.Clear();
+        _isLoading = true;
+        foreach (var file in e.GetMultipleFiles())
+        {
+            if (file.Size < 1024 * 1024 * 100)
+            {
+
+                files.Add(file);
+            }
+            else
+            {
+                await MessageService.Warning($"{file.Name}文件体积过大(超过100MB)，无法上传");
+            }
+        }
+
+        foreach (var file in files)
+        {
+            var fileName = file.Name;
+            string path="";
+            byte[] fileContent =new byte[]{ };
+            if (_assignment.AutoRename)
+            {
+                fileName = $"{_course.Name}-{_assignment.Title}-{_authenticationState.Result.User.FindFirst(System.Security.Claims.ClaimTypes.Name).Value}";
+            }
+
+            //文件形式存入
+            path = Path.Combine(Environment.ContentRootPath, "Resources", fileName);
+
+            await using FileStream fs = new(path, FileMode.Create);
+            // 修改
+            await file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024).CopyToAsync(fs);
+
+            BrowserFile browserFile = new()
+            {
+                Name = fileName,
+                FileType = file.ContentType,
+                Size = file.Size,
+                LastModified = file.LastModified.DateTime,
+                Url = path,
+            };
+
+            _browserFiles.Add(browserFile);
+        }
+
+
+        fileList = files.Select(file => new UploadFileItem { FileName = file.Name, Size = file.Size }).ToList();
+
+        _uploadFile = new()
+        {
+            UserId = Guid.Parse(_authenticationState.Result.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value),
+            FilePurposeType = FilePurposeType.作业提交,
+            browserFiles = _browserFiles,
+        };
+
         StateHasChanged();
     }
 
-    public async void SetHTML()
+    private async void FinishAssignment()
     {
-        string QuillContent =
-            @"<a href='http://BlazorHelpWebsite.com/'>" +
-            "<img src='images/BlazorHelpWebsite.gif' /></a>";
+        Guid? fileSetId=null;
+        if (_uploadFile.browserFiles != null && _uploadFile.browserFiles.Any())
+        {
+            var response =  await FileService.UploadFilesAsync(_uploadFile);
+            if (response.Success && response.Data!=null)
+            {
+                fileSetId = response.Data.FileSetId;
+            }
+            else
+            {
+                await  MessageService.Error("上传文件出现错误！");
+                return;
+            }
+        }
+        SubmissonInfo submissonInfo = new()
+        {
+            SubmissionTime = DateTime.Now,
+            AssignmentId = _assignment.AssignmentId,
+            StudentId = Guid.Parse(_authenticationState.Result.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value),
+            RichText = await _quillHtml.GetHTML(),
+            FileSetId = fileSetId
+        };
 
-        await this.QuillHtml.LoadHTMLContent(QuillContent);
-        StateHasChanged();
+        var subResponse =await SubmissionService.AddSubmissionsAsync(submissonInfo);
+        if (subResponse.Success)
+        {
+          await  MessageService.Success("作业提交成功!");
+        }
+        else
+        {
+            await MessageService.Error("作业提交失败!");
+        }
     }
 }

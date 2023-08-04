@@ -8,10 +8,8 @@ namespace FlowLearningPlatform.Models
         [Key]
         public Guid FileSetId { get; set; }
 
-        [ForeignKey(nameof(FilePurposeType))]
-        public Guid FilePurposeTypeId { get; set; }
         public FilePurposeType FilePurposeType { get; set; }
-        public Guid PurposeId { get; set; }
+        public Guid? PurposeId { get; set; }// maybe delete?
 
         [ForeignKey(nameof(UploadUser))]
         public Guid UploadUserId { get; set; }
@@ -20,4 +18,11 @@ namespace FlowLearningPlatform.Models
         public List<FileData> Files { get; set; }
     }
 
+    public enum FilePurposeType
+    {
+        其它,
+        作业发布,
+        作业提交,
+        公告发布,        
+    }
 }

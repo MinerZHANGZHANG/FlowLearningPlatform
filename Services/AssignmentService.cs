@@ -9,7 +9,8 @@ namespace FlowLearningPlatform.Services
 		Task<List<Assignment>> GetAllAsync();
 		public Task<ServiceResponse<List<Assignment>>> GetByCourseIdAsync(Guid CourseId);
 		public Task<ServiceResponse<List<StudentAssignmentState>>> GetStateByUserCourseAsync(Guid Student,Guid CourseId);
-		public Task<ServiceResponse<Assignment>> AddAssignment(PublishHomework publishHomework);
+        public Task<ServiceResponse<Assignment>> GetByIdAsync(Guid assignmentId);
+        public Task<ServiceResponse<Assignment>> AddAssignment(PublishHomework publishHomework);
 		public Task<ServiceResponse<Assignment>> UpdateAssignment(Assignment assignment);
 		public Task<ServiceResponse<bool>> DeleteAssignment(Guid assignmentId);
 	}
@@ -133,7 +134,25 @@ namespace FlowLearningPlatform.Services
 			return response;
 		}
 
-		public async Task<ServiceResponse<List<StudentAssignmentState>>> GetStateByUserCourseAsync(Guid studentId, Guid courseId)
+		public async Task<ServiceResponse<Assignment>> GetByIdAsync(Guid assignmentId)
+		{
+			ServiceResponse<Assignment> response = new() { Success = false };
+			using (var context = await _dbContextFactory.CreateDbContextAsync())
+			{
+				Assignment result=await context.Assignments
+					.AsNoTracking()
+					.Include(a=>a.Course)
+					.FirstAsync(a=>a.AssignmentId == assignmentId);
+				if (result != null)
+				{
+					response.Success = true;
+					response.Data = result;
+				}
+			}
+			return response;
+		}
+
+        public async Task<ServiceResponse<List<StudentAssignmentState>>> GetStateByUserCourseAsync(Guid studentId, Guid courseId)
 		{
 			ServiceResponse<List<StudentAssignmentState>> response = new() { Success = false };
 

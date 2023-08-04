@@ -15,7 +15,6 @@ namespace FlowLearningPlatform.Data
 
 
         public DbSet<DepartmentType> DepartmentTypes { get; set; }
-        public DbSet<FilePurposeType> FilePurposeTypes { get; set; }
         public DbSet<RoleType> RoleTypes { get; set; }
         public DbSet<SchoolType> SchoolTypes { get; set; }
         public DbSet<SubmissionType> SubmissionTypes { get; set; }
@@ -54,11 +53,11 @@ namespace FlowLearningPlatform.Data
                 .WithMany(e => e.Courses)
                 .UsingEntity<UserCourse>();
 
-            modelBuilder.Entity<FilePurposeType>().HasData(
-                new FilePurposeType() { FilePurposeTypeId =Guid.Parse("46C5D65E-3088-480A-A417-240873F2B62B"), Name = "作业发布" },
-                new FilePurposeType() { FilePurposeTypeId = Guid.Parse("E9A019A2-57A6-447D-B568-B9E29E6CC2FA"), Name = "作业提交" },
-                new FilePurposeType() { FilePurposeTypeId = Guid.Parse("494C1403-CF4E-487A-8A6F-D0C5DC82E239"), Name = "公告发布" }
-            );
+            //modelBuilder.Entity<FilePurposeType>().HasData(
+            //    new FilePurposeType() { FilePurposeTypeId =Guid.Parse("46C5D65E-3088-480A-A417-240873F2B62B"), Name = "作业发布" },
+            //    new FilePurposeType() { FilePurposeTypeId = Guid.Parse("E9A019A2-57A6-447D-B568-B9E29E6CC2FA"), Name = "作业提交" },
+            //    new FilePurposeType() { FilePurposeTypeId = Guid.Parse("494C1403-CF4E-487A-8A6F-D0C5DC82E239"), Name = "公告发布" }
+            //);
             modelBuilder.Entity<RoleType>().HasData(
                 new RoleType() { RoleTypeId = Guid.Parse("346164E4-7E3D-4B17-BEF0-C380445C03B7"), Name = "未知" },
                 new RoleType() { RoleTypeId = Guid.Parse("9882CD39-3318-4001-913D-9D6F67A0458C"), Name = "教师" },
