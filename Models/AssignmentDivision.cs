@@ -3,6 +3,9 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace FlowLearningPlatform.Models
 {
+    /// <summary>
+    /// 作业分区（待实现）
+    /// </summary>
     public class AssignmentDivision
     {
         [Key]

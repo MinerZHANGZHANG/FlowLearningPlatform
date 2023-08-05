@@ -4,6 +4,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace FlowLearningPlatform.Models.Form
 {
+    /// <summary>
+    /// 作业提交信息
+    /// </summary>
     public class SubmissonInfo
     {
         public DateTime SubmissionTime { get; set; }

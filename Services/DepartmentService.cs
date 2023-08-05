@@ -1,4 +1,6 @@
-﻿namespace FlowLearningPlatform.Services
+﻿using System.Collections.Generic;
+
+namespace FlowLearningPlatform.Services
 {
     public interface IDepartmentService
     {
@@ -8,24 +10,34 @@
 
     public class DepartmentService: IDepartmentService
     {
-        private readonly DataContext _context;
+        private readonly IDbContextFactory<DataContext> _dbContextFactory;
 
-        public DepartmentService(DataContext context)
+        public DepartmentService(IDbContextFactory<DataContext> dbContextFactory)
         {
-            _context = context;
+            _dbContextFactory = dbContextFactory;
         }
 
         public async Task<List<DepartmentType>> GetAllAsync()
         {
-           var result= await _context.DepartmentTypes.OrderBy(x => x.Name).ToListAsync();
+            List<DepartmentType> result;
+            using (var context = await _dbContextFactory.CreateDbContextAsync())
+            {
+                result = await context.DepartmentTypes.OrderBy(x => x.Name).ToListAsync();
+            }
+           
             return result;
         }
 
         public async Task<List<DepartmentType>> GetDepartmentBySchool(SchoolType schoolType)
         {
-            var result = await _context.DepartmentTypes
-                 .Where(d => d.SchoolId.Equals(schoolType.SchoolTypeId))
-                 .ToListAsync();
+            List<DepartmentType> result;
+            using (var context = await _dbContextFactory.CreateDbContextAsync())
+            {
+                result = await context.DepartmentTypes
+                .Where(d => d.SchoolId.Equals(schoolType.SchoolTypeId))
+                .ToListAsync();
+            }
+           
             return result;
         }
     }

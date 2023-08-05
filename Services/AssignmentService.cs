@@ -1,15 +1,16 @@
-﻿using FlowLearningPlatform.Models;
-using FlowLearningPlatform.Models.Form;
-using System.Collections.Generic;
-
+﻿
 namespace FlowLearningPlatform.Services
 {
 	public interface IAssignmentService
 	{
+		// 获取作业信息
 		Task<List<Assignment>> GetAllAsync();
-		public Task<ServiceResponse<List<Assignment>>> GetByCourseIdAsync(Guid CourseId);
-		public Task<ServiceResponse<List<StudentAssignmentState>>> GetStateByUserCourseAsync(Guid Student,Guid CourseId);
+		public Task<ServiceResponse<List<Assignment>>> GetAllByCourseIdAsync(Guid CourseId);
+		public Task<ServiceResponse<List<StudentAssignmentState>>> GetStateByStudentCourseAsync(Guid studentId,Guid courseId);
+		public Task<ServiceResponse<List<TeacherAssignmentState>>> GetStateByTeacherCourseAsync(Guid teacherId,Guid courseId);
         public Task<ServiceResponse<Assignment>> GetByIdAsync(Guid assignmentId);
+
+		// 对作业进行增删改
         public Task<ServiceResponse<Assignment>> AddAssignment(PublishHomework publishHomework);
 		public Task<ServiceResponse<Assignment>> UpdateAssignment(Assignment assignment);
 		public Task<ServiceResponse<bool>> DeleteAssignment(Guid assignmentId);
@@ -19,7 +20,6 @@ namespace FlowLearningPlatform.Services
 	{
         private readonly IDbContextFactory<DataContext> _dbContextFactory;
         private readonly ILogger<AssignmentService> _logger;
-        private bool _isRun = false;
 
 		public AssignmentService(IDbContextFactory<DataContext> dbContextFactory,ILogger<AssignmentService> logger)
 		{
@@ -51,14 +51,14 @@ namespace FlowLearningPlatform.Services
                         AutoRename = publishHomework.AutoRename,
                     };
 
-					await	context.Assignments.AddAsync(assignment);
+					await context.Assignments.AddAsync(assignment);
 					await context.SaveChangesAsync();
 
 					response.Success = true;
 					response.Data = assignment;
                 }
             }
-           catch(Exception ex) 
+			catch(Exception ex) 
 			{
 				_logger.LogError(ex.Message);
 			}
@@ -96,40 +96,39 @@ namespace FlowLearningPlatform.Services
 			return result;
 		}
 
-		public async Task<ServiceResponse<List<Assignment>>> GetByCourseIdAsync(Guid CourseId)
+		public async Task<ServiceResponse<List<Assignment>>> GetAllByCourseIdAsync(Guid CourseId)
 		{
 			ServiceResponse<List<Assignment>> response = new() { Success = false };
 
-			if (!_isRun)
+			try
 			{
-				_isRun = true;
-
-				try
+				using (var context = await _dbContextFactory.CreateDbContextAsync())
 				{
-					using (var context = await _dbContextFactory.CreateDbContextAsync())
+					var data = await context.Courses
+					.AsNoTracking()
+					.Include(c => c.Assignments)
+					.Where(c => c.CourseId == CourseId)
+					.Select(c => c.Assignments)
+					.FirstAsync();
+
+                    if (data != null)
+                    {
+                        response.Success = true;
+                        response.Data = data;
+					}
+					else
 					{
-						var data = await context.Courses
-						.AsNoTracking()
-						.Include(c => c.Assignments)
-						.Where(c => c.CourseId == CourseId)
-						.Select(c => c.Assignments)
-						.FirstAsync();
-
-                        if (data != null)
-                        {
-                            response.Success = true;
-                            response.Data = data;
-                        }
-                    }
+                        response.Success = true;
+						response.Data = new();
+                        response.Message = "该课程编号下没有作业";
+					}
+                }
 					
-				}
-				catch (Exception ex)
-				{
-
-				}
-				_isRun = false;
-
 			}
+			catch (Exception ex)
+			{
+                _logger.LogError(ex.Message);
+            }
 
 			return response;
 		}
@@ -152,80 +151,137 @@ namespace FlowLearningPlatform.Services
 			return response;
 		}
 
-        public async Task<ServiceResponse<List<StudentAssignmentState>>> GetStateByUserCourseAsync(Guid studentId, Guid courseId)
+        public async Task<ServiceResponse<List<StudentAssignmentState>>> GetStateByStudentCourseAsync(Guid studentId, Guid courseId)
 		{
 			ServiceResponse<List<StudentAssignmentState>> response = new() { Success = false };
 
-			if (!_isRun)
+			try
 			{
-				_isRun = true;
-
-				try
+				using (var context = await _dbContextFactory.CreateDbContextAsync())
 				{
-					using (var context = await _dbContextFactory.CreateDbContextAsync())
+					var assignments = await context.Assignments
+					.AsNoTracking()
+					.Where(a => a.CourseId.Equals(courseId))
+					.ToListAsync();
+
+					if (assignments != null)
 					{
-						var assignments = await context.Assignments
-						.AsNoTracking()
-						.Where(a => a.CourseId.Equals(courseId))
-						.ToListAsync();
-
-
-						if (assignments != null)
+						List<StudentAssignmentState> assignmentStates = new();
+						foreach (var assignment in assignments)
 						{
-							List<StudentAssignmentState> assignmentStates = new();
-							foreach (var assignment in assignments)
+							var submission = await context.Submissions
+								.AsNoTracking()
+								.FirstOrDefaultAsync(s => s.AssignmentId == assignment.AssignmentId && s.StudentId == studentId);
+							int submissionCount = 0;
+							Guid submissionGuid = Guid.Empty;
+							if (submission != null)
 							{
-								var submission = await context.Submissions
-									.AsNoTracking()
-									.FirstOrDefaultAsync(s => s.Assignmentd == assignment.AssignmentId && s.StudentId == studentId);
-								int submissionCount = 0;
-								Guid submissionGuid = Guid.Empty;
-								if (submission != null)
-								{
-									submissionCount = submission.SubmissionCount;
-									submissionGuid = submission.SubmissionId;
-								}
-
-								StudentAssignmentState temp = new()
-								{
-									AssignmentId = assignment.AssignmentId,
-									CourseId = assignment.CourseId,
-									Title = assignment.Title,
-									Description = assignment.Description,
-									UpdateTime = assignment.UpdateTime,
-									Deadline = assignment.Deadline,
-
-									HasFileSet = assignment.FileSetId!=null,
-									FileSetId = assignment.FileSetId??Guid.Empty,
-
-									SubmissionCount = submissionCount,
-									SubmissionId = submissionGuid,
-								};
-
-								assignmentStates.Add(temp);
+								submissionCount = submission.SubmissionCount;
+								submissionGuid = submission.SubmissionId;
 							}
 
-							if (assignmentStates.Any())
+							StudentAssignmentState temp = new()
 							{
-								response.Success = true;
-								response.Data = assignmentStates;
-							}
+								AssignmentId = assignment.AssignmentId,
+								CourseId = assignment.CourseId,
+								Title = assignment.Title,
+								Description = assignment.Description,
+								UpdateTime = assignment.UpdateTime,
+								Deadline = assignment.Deadline,
+
+								HasFileSet = assignment.FileSetId!=null,
+								FileSetId = assignment.FileSetId??Guid.Empty,
+
+								SubmissionCount = submissionCount,
+								SubmissionId = submissionGuid,
+							};
+
+							assignmentStates.Add(temp);
 						}
 
+						if (assignmentStates.Any())
+						{
+							response.Success = true;
+							response.Data = assignmentStates;
+						}
+					}
+					else
+					{
+						response.Message = "这门课程尚未发布作业";
 					}
 				}
-				catch (Exception ex)
+			}
+			catch (Exception ex)
+			{
+                _logger.LogError(ex.Message);
+            }
+
+			return response;
+		}
+
+		public async Task<ServiceResponse<List<TeacherAssignmentState>>> GetStateByTeacherCourseAsync(Guid teacherId, Guid courseId)
+		{
+			ServiceResponse<List<TeacherAssignmentState>> response = new() { Success = false };
+
+			try
+			{
+				using (var context = await _dbContextFactory.CreateDbContextAsync())
 				{
+					var assignments = await context.Assignments
+					.AsNoTracking()
+					.Where(a => a.CourseId.Equals(courseId))
+					.ToListAsync();
 
+					if (assignments != null)
+					{
+						List<TeacherAssignmentState> assignmentStates = new();
+						foreach (var assignment in assignments)
+						{
+							int submissionCount = await context.Submissions
+								.AsNoTracking()
+								.Where(s => s.AssignmentId == assignment.AssignmentId)
+								.GroupBy(s => s.StudentId)
+								.CountAsync();
+
+							TeacherAssignmentState temp = new()
+							{
+								AssignmentId = assignment.AssignmentId,
+								CourseId = assignment.CourseId,
+								Title = assignment.Title,
+								Description = assignment.Description,
+								UpdateTime = assignment.UpdateTime,
+								Deadline = assignment.Deadline,
+
+								HasFileSet = assignment.FileSetId != null,
+								FileSetId = assignment.FileSetId ?? Guid.Empty,
+
+								SubmissionCount = submissionCount,															
+							};
+
+							assignmentStates.Add(temp);
+						}
+
+						if (assignmentStates.Any())
+						{
+							response.Success = true;
+							response.Data = assignmentStates;
+						}
+					}
+					else
+					{
+						response.Message = "这门课程尚未发布作业";
+					}
 				}
-				_isRun = false;
-
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex.Message);
 			}
 
 			return response;
 		}
 
-        public async Task<ServiceResponse<Assignment>> UpdateAssignment(Assignment assignment)
+		public async Task<ServiceResponse<Assignment>> UpdateAssignment(Assignment assignment)
         {
             ServiceResponse<Assignment> response = new() { Success = false };
             try

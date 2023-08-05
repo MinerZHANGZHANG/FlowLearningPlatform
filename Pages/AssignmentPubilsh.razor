@@ -1,22 +1,12 @@
-﻿@layout ManagerLayout
-@page "/course/{CourseId:guid}/publish"
+﻿@page "/course/{CourseId:guid}/publish"
+@layout ManagerLayout
+@attribute [Authorize(Roles ="教师")]
 
 @inject ICourseService CourseService
 @inject IAssignmentService AssignmentService
 @inject IMessageService MessageService
 
-<h3>HomeworkPubilsh</h3>
-
-<AuthorizeView>
-    <Authorized>
-        @if (_authenticationState is not null)
-{
-    <p>你好 @_authenticationState.Result.User.FindFirst(System.Security.Claims.ClaimTypes.Name).Value</p>
-}
-
-    </Authorized>
-</AuthorizeView>
-
+<PageTitle>作业发布</PageTitle>
 
 <Form Model="@PublicHomework"
       LabelColSpan="8"
@@ -50,13 +40,11 @@
         </FormItem>
     }
     
-
     <FormItem Label="文件自动重命名">
         <Tooltip Placement="@Placement.TopLeft" Title="按照 课程-作业名称-学生姓名-学号 的格式">
             <Switch @bind-Value="@context.AutoRename"/>
         </Tooltip>        
     </FormItem>
-
 
 
     <FormItem Label="文件提交限制">
@@ -165,7 +153,7 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        var response = await CourseService.GetAllByIdAsync(CourseId);
+        var response = await CourseService.GetByIdAsync(CourseId);
         if (response.Success)
         {
             _course = response.Data??new();
@@ -223,9 +211,6 @@
         }      
     }
 
-
-
-
     public class ResponseModel
     {
         public string name { get; set; }
@@ -238,7 +223,4 @@
     }
 
     private bool _isFileLimited=true;
-
-
-
 }

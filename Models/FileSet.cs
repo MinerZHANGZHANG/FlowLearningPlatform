@@ -3,13 +3,14 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace FlowLearningPlatform.Models
 {
+    /// <summary>
+    /// 多个FileData组成的文件集合
+    /// </summary>
     public class FileSet
     {
         [Key]
         public Guid FileSetId { get; set; }
-
         public FilePurposeType FilePurposeType { get; set; }
-        public Guid? PurposeId { get; set; }// maybe delete?
 
         [ForeignKey(nameof(UploadUser))]
         public Guid UploadUserId { get; set; }
@@ -18,6 +19,9 @@ namespace FlowLearningPlatform.Models
         public List<FileData> Files { get; set; }
     }
 
+    /// <summary>
+    /// 文件的使用类型
+    /// </summary>
     public enum FilePurposeType
     {
         其它,

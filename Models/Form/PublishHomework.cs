@@ -3,15 +3,18 @@ using System.Text.Json.Serialization;
 
 namespace FlowLearningPlatform.Models.Form
 {
+    /// <summary>
+    /// 发布作业的表单
+    /// </summary>
     public class PublishHomework
     {
-        [Required]
+        [Required(ErrorMessage = "作业标题不能为空")]
         public string Title { get; set; }
-        [StringLength(255)]
+        [StringLength(1023,ErrorMessage = "作业描述过长")]
         public string Description { get; set; }=string.Empty;
-        [Required]
+        [Required(ErrorMessage = "课程号不能为空")]
         public Guid CourseId { get; set; }
-        [Required]
+        [Required(ErrorMessage = "作业截止时间不能为空")]
         public DateTime[] TimeRange { get; set; } = new DateTime[] { DateTime.Now, DateTime.Now.AddDays(10) };
 
         public bool AutoRename { get; set; }

@@ -42,7 +42,7 @@
                         {
                             FileDataId = Guid.NewGuid(),
                             Name = file.Name,
-                            Suffix = file.FileType,
+                            FileType = file.FileType,
                             Size = file.Size,
                             UploadTime = DateTime.Now,
 

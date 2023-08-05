@@ -1,25 +1,31 @@
-﻿namespace FlowLearningPlatform.Services
+﻿
+namespace FlowLearningPlatform.Services
 {
     public interface ISchoolService
     {
         Task<List<SchoolType>> GetAllAsync();
-       
     }
 
     public class SchoolService : ISchoolService
     {
-        private readonly DataContext _context;
+        private readonly IDbContextFactory<DataContext> _dbContextFactory;
 
-        public SchoolService(DataContext context)
+        public SchoolService(IDbContextFactory<DataContext> dbContextFactory)
         {
-            _context = context;
+            _dbContextFactory = dbContextFactory;
         }
 
         public async Task<List<SchoolType>> GetAllAsync()
         {
-            var result = await _context.SchoolTypes.OrderBy(x => x.Name).ToListAsync();
+            List<SchoolType> result;
+            using (var context = await _dbContextFactory.CreateDbContextAsync())
+            {
+                result = await context.SchoolTypes
+                    .AsNoTracking()
+                    .OrderBy(x => x.Name)
+                    .ToListAsync();
+            }
             return result;
         }
-      
     }
 }

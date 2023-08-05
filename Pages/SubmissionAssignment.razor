@@ -1,26 +1,18 @@
 ﻿@page "/course/{CourseId:guid}/submission/{AssignmentId:guid}"
 @layout ManagerLayout
 @using Blazored.TextEditor
+
+@inject IJSRuntime Js;
+@inject IWebHostEnvironment Environment
+@inject NavigationManager NavigationManager
+
+@inject IMessageService MessageService
 @inject IUserService UserService
 @inject IAssignmentService AssignmentService
-@inject IJSRuntime Js;
-@inject IMessageService MessageService
 @inject ISubmissionService SubmissionService
 @inject IFileService FileService
-@inject IWebHostEnvironment Environment
 
-<h3>Job Submission</h3>
 
-@*
-    上面加个作业信息
-    增加Service类
-    有对富文本的保存和处理
-*@
-
-@if(_authenticationState is not null)
-{
-    <p>nihao @_authenticationState.Result.User.FindFirst(System.Security.Claims.ClaimTypes.Name).Value</p>
-}
 
 @*TODO:记录上一次提交结果*@
 
@@ -220,7 +212,8 @@
         var subResponse =await SubmissionService.AddSubmissionsAsync(submissonInfo);
         if (subResponse.Success)
         {
-          await  MessageService.Success("作业提交成功!");
+            NavigationManager.NavigateTo($"course/{CourseId}");
+            await  MessageService.Success("作业提交成功!");
         }
         else
         {

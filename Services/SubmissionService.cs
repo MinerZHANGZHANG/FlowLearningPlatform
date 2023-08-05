@@ -1,5 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-
+﻿
 namespace FlowLearningPlatform.Services
 {
     public interface ISubmissionService
@@ -27,7 +26,7 @@ namespace FlowLearningPlatform.Services
                 {
                     SubmissionId = Guid.NewGuid(),
                     SubmissionTime = DateTime.Now,
-                    Assignmentd = submissonInfo.AssignmentId,
+                    AssignmentId = submissonInfo.AssignmentId,
                     StudentId = submissonInfo.StudentId,
                     RichText = submissonInfo.RichText,
                     FileSetId = submissonInfo.FileSetId,
@@ -35,19 +34,14 @@ namespace FlowLearningPlatform.Services
 
                 using (var context = await _dbContextFactory.CreateDbContextAsync())
                 {
-                    int submissionCount = 0;
-                    var last = await context.Submissions
+                    // 提交前判断之前是否提交过作业
+                    int past = await context.Submissions
                         .AsNoTracking()
-                        .Where(s => s.Assignmentd == submissonInfo.AssignmentId && s.StudentId == submissonInfo.StudentId)
-                        .FirstOrDefaultAsync();
+                        .Where(s => s.AssignmentId == submissonInfo.AssignmentId && s.StudentId == submissonInfo.StudentId)
+                        .CountAsync();
 
-                    if(last != null)
-                    {
-                        submissionCount = last.SubmissionCount+1;
-                    }
-                       
-
-
+                    int  submissionCount = past+1;
+                                         
                     submission.SubmissionCount = submissionCount;
                     
                     await context.Submissions.AddAsync(submission);
@@ -63,7 +57,6 @@ namespace FlowLearningPlatform.Services
             }
 
             return response;
-        }
-            
+        }           
     }
 }

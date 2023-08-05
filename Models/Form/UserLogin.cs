@@ -5,9 +5,9 @@ namespace FlowLearningPlatform.Models.Form
 {
     public class UserLogin
     {
-        [Required, DisplayName("学号")]
+        [Required(ErrorMessage = "学号不能为空"), DisplayName("学号")]
         public string StudentNumber { get; set; }
-        [Required, DisplayName("密码")]
+        [Required(ErrorMessage = "密码不能为空"), DisplayName("密码")]
         public string Password { get; set; }
         public bool RememberMe { get; set; } = true;
     }

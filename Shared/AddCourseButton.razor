@@ -51,6 +51,9 @@
 </Drawer>
 
 @code {
+    [Parameter]
+    public Action OnAddSuccess{ get; set; }
+
     bool visible = false;
 
     void open()
@@ -72,7 +75,8 @@
         {
             _form.Reset();
             close();
-            StateHasChanged();
+            //StateHasChanged();
+            OnAddSuccess?.Invoke();
             await MessageService.Success("编辑成功!");
         }
         else

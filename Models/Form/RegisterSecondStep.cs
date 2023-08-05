@@ -7,13 +7,13 @@ namespace FlowLearningPlatform.Models.Form
 	/// </summary>
 	public class RegisterSecondStep
 	{
-        [Required]
+        [Required(ErrorMessage = "姓名不能为空")]
         public string Name { get; set; }
-        [Required]
+        [Required(ErrorMessage = "专业不能为空")]
         public string DepartmentTypeId { get; set; }
-        [Required]
+        [Required(ErrorMessage = "密码不能为空")]
         public string Password { get;set; }
-		[Required,Compare(nameof(Password))]
+		[Required(ErrorMessage = "确认密码不能为空"), Compare(nameof(Password),ErrorMessage = "两次输入的密码需要一致")]
 		public string ConfirmPassword { get; set; }
 	}
 }

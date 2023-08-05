@@ -3,6 +3,9 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace FlowLearningPlatform.Models.Enum
 {
+    /// <summary>
+    /// 专业类型
+    /// </summary>
     public class DepartmentType
     {
         [Key]
@@ -11,7 +14,7 @@ namespace FlowLearningPlatform.Models.Enum
 
         [ForeignKey(nameof(SchoolType))]
         public Guid SchoolId { get; set;}
-        public SchoolType? SchoolType { get; set;}
+        public SchoolType SchoolType { get; set;}
     }
 
 

@@ -1,15 +1,11 @@
-﻿@layout ManagerLayout
-@page "/Course"
+﻿@page "/Course"
+@attribute [Authorize]
+@layout ManagerLayout
 
-@inject ICourseService CourseService
 @inject NavigationManager NavigationManager
-
+@inject ICourseService CourseService
 @inject IUserService UserService 
-@inject IMessageService MessageService
 
-@*
-	实现添加和删除逻辑
-*@
 <PageTitle>课程管理</PageTitle>
 
 <AuthorizeView  Roles="管理员" Context="authorContext">
@@ -17,14 +13,10 @@
 		<Layout>
 			<Header>
                 <div style="float:right">
-					<AddCourseButton></AddCourseButton>
+					<AddCourseButton OnAddSuccess="async ()=>_courses = await CourseService.GetAllAsync(0, 10)" />
 				</div>
 			</Header>
 			<Content>
-				@if (GetInfo(authorContext.User))
-				{
-					GetAllCourse();					
-				}
 				@if (_courses != null && _courses.Count > 0)
 				{
 					<Table TItem="Models.Course"
@@ -36,61 +28,28 @@
 						<PropertyColumn Title="专业" Property="c=>c.DepartmentTypeId">
 							<p>@context.DepartmentType.Name</p>
 						</PropertyColumn>
-
 						<ActionColumn Title="操作">
-							<Button Icon="plus" Type="primary" @onclick="_=>open(context.CourseId)">展开操作页</Button>
-							
+							<Button Icon="plus" Type="primary" @onclick="_=>open(context.CourseId)">展开操作页</Button>						
 						</ActionColumn>
 					</Table>
 					
 					<Drawer Closable="true" Width="720" Visible="visible" Title='("添加删除用户")' OnClose="_=>close()">
 						<Template style="height:80%">
-						<Collapse>
-							<Panel Header="添加" Key="0">
-								<Select TItem="SimpleUser"
-											TItemValue="Guid"
-											DataSource="@_usersNotInCourse"
-											LabelName="@nameof(SimpleUser.Name)"
-											ValueName="@nameof(SimpleUser.Id)"
-											EnableSearch
-											Mode="multiple"
-											@bind-Values="@_selectedUsersId">
-								</Select>
-								<Button OnClick="AddUserToCourse">添加上述用户</Button>
-							</Panel>
-							<Panel Header="删除" Key="1">
-								<AntList DataSource="@_usersInCourse" ItemLayout="ListItemLayout.Horizontal">
-									<ChildContent>
-										<ListItem>
-											<p>@context.Name <a @onclick="()=>Remove(context.Id)">删除</a></p>
-
-										</ListItem>
-									</ChildContent>
-									<LoadMore>
-
-									</LoadMore>
-								</AntList>
-							</Panel>
-						</Collapse>
-
-					</Template>
-				</Drawer>
+							<CourseUserForm CourseId="@_currentCourseId" UserWithCourses="@(_userWithCourses??new())"/>
+						</Template>
+					</Drawer>
 				}
-				
-
-				
+				else
+				{
+					<Empty/>
+				}
 			</Content>
-		</Layout>
-		
+		</Layout>		
 	</Authorized>
 </AuthorizeView>
 
 <AuthorizeView Roles="教师,学生">
     <Authorized>
-		@{
-			GetInfo(context.User);
-			GetCourseById();
-		}
 		@if (_courses != null && _courses.Count > 0)
 		{
 			foreach (var course in _courses)
@@ -110,116 +69,68 @@
 </AuthorizeView>
 
 @code {
+	[CascadingParameter]
+	private Task<AuthenticationState>? _authenticationState { get; set; }
 
 	private List<Models.Course> _courses;
 	private Guid userId;
 
-	private bool GetInfo(System.Security.Claims.ClaimsPrincipal User) =>
-	AuthService.TryGetUserFromClaim(User, out userId, out string userName, out string userRole);
-
-	private async void GetCourseById()
+	protected override async Task OnParametersSetAsync()
 	{
-		if (userId != Guid.Empty&&_courses==null)
+		var state = await _authenticationState;
+		AuthService.TryGetUserFromClaim(state.User, out userId, out string userName, out string userRole);
+		if (userRole == "教师"||userRole=="学生")
 		{
-			var response = await CourseService.GetByUserIdAsync(userId.ToString());
-
-			if (response.Success && response.Data != null)
+			if (userId != Guid.Empty && _courses == null)
 			{
-				_courses = response.Data;
+				var response = await CourseService.GetByUserIdAsync(userId.ToString());
+
+				if (response.Success && response.Data != null)
+				{
+					_courses = response.Data;
+					StateHasChanged();
+				}
+			}
+		}
+		if (userRole == "管理员")
+		{
+			if (_courses == null)
+			{
+				_courses = await CourseService.GetAllAsync(0, 10);
 				StateHasChanged();
-			}
+			}			
 		}
+		await base.OnParametersSetAsync();
 	}
-
-	private async void GetAllCourse()
-	{
-		if (_courses == null)
-		{
-			_courses = await CourseService.GetAllAsync(0, 10);
-			StateHasChanged();
-		}
-
-	}
-
-	public class SimpleUser
-	{
-		public Guid Id { get; set; }
-		public string Name { get; set; }
-	}
-
-	List<SimpleUser> _usersInCourse = new();
-	List<SimpleUser> _usersNotInCourse = new();
-	private async void GetUserWithCourseId(Guid courseId)
-	{
-		var _userWithCourses = await UserService.GetUserWithCourseAsync(courseId);
-		UpdateUserCourse(_userWithCourses);
-	}
-
-	private void UpdateUserCourse(List<UserWithCourse> userWithCourses)
-	{
-		_usersInCourse.Clear();
-		_usersNotInCourse.Clear();
-		foreach (var user in userWithCourses)
-		{
-			if (user.IsInCourse)
-			{
-				_usersInCourse.Add(new() { Id = user.UserId, Name = user.UserName });
-			}
-			else
-			{
-				_usersNotInCourse.Add(new() { Id = user.UserId, Name = user.UserName });
-			}
-			StateHasChanged();
-		}
-	}
-
 
 	private void NavigateToDetail(string courseId)
 	{
-		NavigationManager.NavigateTo($"course/{courseId}/{userId}");
+		NavigationManager.NavigateTo($"course/{courseId}");
 	}
 
-	bool visible = false;
+	#region -课程用户管理-
 
+	// 开关课程用户操作界面
+	bool visible = false;
+	private Guid _currentCourseId;
 	void open(Guid courseId)
 	{
+		// 打开的同时记录课程编号
 		_currentCourseId = courseId;
 		this.visible = true;
 		GetUserWithCourseId(courseId);
 	}
-
 	void close()
 	{
 		this.visible = false;
 	}
 
-	private Guid _currentCourseId;
-
-	public async void Remove(Guid userId)
+	private List<UserWithCourse> _userWithCourses;
+	// 获取课程所在专业的用户
+	// 或许需要加入对其它专业的检索
+	private async void GetUserWithCourseId(Guid courseId)
 	{
-		// 弹窗判断下
-		var response = await UserService.RemoveUserFromCourse(_currentCourseId, new() { userId });
-		if (response.Success)
-		{
-			UpdateUserCourse(response.Data);
-			_selectedUsersId = new List<Guid>();
-			await MessageService.Success("成功删除用户!");
-		}
+		var _userWithCourses = await UserService.GetUserWithCourseAsync(courseId);
 	}
-
-	private IEnumerable<Guid> _selectedUsersId{ get; set; } = new List<Guid>();
-	private async void AddUserToCourse()
-	{
-		if (_selectedUsersId.Any())
-		{
-			var response = await UserService.AddUserToCourse(_currentCourseId, _selectedUsersId.ToList());
-			if (response.Success)
-			{
-				UpdateUserCourse(response.Data);
-				_selectedUsersId = new List<Guid>();
-				await MessageService.Success("成功添加用户!");
-			}
-		}
-		
-	}
+	#endregion
 }

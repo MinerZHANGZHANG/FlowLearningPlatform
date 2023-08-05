@@ -1,4 +1,5 @@
-﻿@page "/course/{CourseId:guid}/{UserId:guid}"
+﻿@page "/course/{_courseId:guid}"
+@layout ManagerLayout
 
 @inject ICourseService CourseService
 @inject NavigationManager NavigationManager
@@ -31,16 +32,53 @@
 	</Panel>
 </Collapse>
 
-<div>
-	<Divider></Divider>
-	<AuthorizeView Context="authorContext" Roles="教师">
-		<Button @onclick="()=>ToPublishPage(CourseId)">发布作业</Button>
-	</AuthorizeView>
-</div>
-@*教师也需要一个展示界面*@
+
+<Divider></Divider>
+<AuthorizeView Context="authorContext" Roles="教师">
+	<Authorized>
+		<Button @onclick="()=>ToPublishPage(_courseId)">发布作业</Button>
+		<Table TItem="TeacherAssignmentState" DataSource="@_teacherAssignmentStates" OnRowClick="OnTeacherRowClick">
+			<PropertyColumn Property="a=>a.Title" Title="名称">
+				<p>@context.Title</p>
+			</PropertyColumn>
+			<PropertyColumn Property="a=>a.UpdateTime" Title="发布时间">
+				<p>@context.UpdateTime.ToString("yy年MM月dd日")</p>
+			</PropertyColumn>
+			<PropertyColumn Sortable="true" Property="a=>a.Deadline" Title="截止时间">
+				<p>@context.Deadline.ToString("yy年MM月dd日")</p>
+			</PropertyColumn>
+			<PropertyColumn Property="a=>a.SubmissionCount" Title="状态">
+				@if (context.Deadline < DateTime.Now)
+				{
+					<Tag Color="@PresetColor.Blue.ToString()">已截止</Tag>
+				}
+
+				@if (context.SubmissionCount == _studentCount)
+				{
+					<Tag Color="@PresetColor.Green.ToString()">已收齐</Tag>
+				}
+				else
+				{
+					<Tag Color="@PresetColor.Yellow.ToString()">未收齐</Tag>
+				}
+			</PropertyColumn>
+			<PropertyColumn Property="a=>a.SubmissionCount" Title="提交人数">
+				<p>@context.SubmissionCount / @_studentCount</p>
+			</PropertyColumn>
+			<ActionColumn Title="操作">
+				<Button @onclick="()=>ToSubmissionPage(context.CourseId,context.AssignmentId)">
+					<p>修改作业(实现中)</p>
+				</Button>
+			</ActionColumn>
+				
+		</Table>
+	</Authorized>		
+</AuthorizeView>
+
+
 <AuthorizeView Context="authorContext" Roles="学生">
 	<Authorized>
-		<Table TItem="StudentAssignmentState" DataSource="@_assignmentStates" OnRowClick="OnRowClick">
+		<Table TItem="StudentAssignmentState" DataSource="@_studentAssignmentStates" OnRowClick="OnStudentRowClick">
 			<PropertyColumn Property="a=>a.Title" Title="名称">
 				<p>@context.Title</p>
 			</PropertyColumn>
@@ -68,7 +106,17 @@
 				<p>@context.SubmissionCount</p>
 			</PropertyColumn>
 			<ActionColumn Title="操作">
-				<Button @onclick="()=>ToSubmissionPage(context.CourseId,context.AssignmentId)">提交作业</Button>
+				<Button @onclick="()=>ToSubmissionPage(context.CourseId,context.AssignmentId)">
+					@if (context.SubmissionCount > 0)
+					{
+						<p>修改作业</p>
+					}
+					else
+					{
+						<p>提交作业</p>
+					}
+
+				</Button>
 			</ActionColumn>
 		</Table>
 	</Authorized>
@@ -77,32 +125,63 @@
 
 @code {
 	[Parameter]
-	public Guid CourseId{ get; set; }
-	// 替换成手动查询
-	[Parameter]
-	public Guid UserId { get; set; }
+	public Guid _courseId{ get; set; }
+	private Guid _userId { get; set; }
+
+	[CascadingParameter]
+	private Task<AuthenticationState>? _authenticationState { get; set; }
 
 	private Models.Course _course { get; set; }
-	private List<StudentAssignmentState> _assignmentStates { get; set; } = new();
+
+	// 或许可以考虑把这两个合并起来
+	private List<StudentAssignmentState> _studentAssignmentStates { get; set; } = new();
+	private List<TeacherAssignmentState> _teacherAssignmentStates { get; set; } = new();
+	private int _studentCount = 0;
 
 	protected override async Task OnParametersSetAsync() 
 	{
-		var courseResponse = await CourseService.GetAllByIdAsync(CourseId);
-		if (courseResponse.Success&&courseResponse.Data!=null)
+		var courseResponse = await CourseService.GetByIdAsync(_courseId);
+		if (courseResponse.Success && courseResponse.Data != null)
 		{
 			_course = courseResponse.Data;
 		}
 
-		var assignmentStateResponse = await AssignmentService.GetStateByUserCourseAsync(UserId, CourseId);
-		if (assignmentStateResponse.Success && assignmentStateResponse.Data != null)
+		var state = await _authenticationState;
+		var claim= state.User.FindFirst(ClaimTypes.NameIdentifier);
+		var role = state.User.FindFirst(ClaimTypes.Role);
+		if (claim!=null&& Guid.TryParse(claim.Value,out Guid temp))
 		{
-			_assignmentStates = assignmentStateResponse.Data;
+			_userId = temp;
+
+			if (role.Value == "学生")
+			{
+				var assignmentStateResponse = await AssignmentService.GetStateByStudentCourseAsync(_userId, _courseId);
+				if (assignmentStateResponse.Success && assignmentStateResponse.Data != null)
+				{
+					_studentAssignmentStates = assignmentStateResponse.Data;
+				}
+			}
+			else if (role.Value == "教师")
+			{
+				var assignmentStateResponse = await AssignmentService.GetStateByTeacherCourseAsync(_userId, _courseId);
+				if (assignmentStateResponse.Success && assignmentStateResponse.Data != null)
+				{
+					_teacherAssignmentStates = assignmentStateResponse.Data;
+				}
+				_studentCount = await CourseService.GetUserCount(_courseId);
+			}
+
 		}
 
 		await base.OnParametersSetAsync();
 	}
 
-	private	void OnRowClick(RowData<StudentAssignmentState> row)
+	private	void OnStudentRowClick(RowData<StudentAssignmentState> row)
+	{
+
+	}
+
+	private void OnTeacherRowClick(RowData<TeacherAssignmentState> row)
 	{
 
 	}

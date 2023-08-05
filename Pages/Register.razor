@@ -13,9 +13,6 @@
         <Step Title="可选信息" />
     </Steps>
 
-
-    
-
     @if (!_isFinish)
     {
         switch (_progressCurrent)
@@ -163,8 +160,8 @@
 
 
     #region --FormHandle--
-    private Form<IdentityVal> _validateFrom=new();
-    private IdentityVal _validateModel=new() { Brithday=new DateTime(2000,1,1)};
+    private Form<RegisterFirstStep> _validateFrom=new();
+    private RegisterFirstStep _validateModel=new() { Brithday=new DateTime(2000,1,1)};
     private async void OnValidateSuccess(EditContext context)
     {
         ServiceResponse<bool> response= await AuthService.ValidateUser(_validateModel);
@@ -203,7 +200,7 @@
     }
 
 
-    private ExtraInfo _extraInfo = new();
+    private RegisterThridStep _extraInfo = new();
     private bool _isLoading=false;
     private async void OnExtraSuccess(EditContext context)
     {

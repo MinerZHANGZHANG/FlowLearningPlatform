@@ -53,7 +53,6 @@ namespace FlowLearningPlatform
                 var user = new ClaimsPrincipal(identity);
                 var state = new AuthenticationState(user);
 
-                // NotifyAuthenticationStateChanged(Task.FromResult(state));
                 return state;
             }
             catch
@@ -68,7 +67,7 @@ namespace FlowLearningPlatform
 
         }
 
-        public void Login()
+        public void AuthStateChange()
         {
             NotifyAuthenticationStateChanged( GetAuthenticationStateAsync());
         }

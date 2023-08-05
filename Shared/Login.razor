@@ -61,7 +61,7 @@ Visible="true"
             {
                 // 写入本地存储
                 await LocalStorageService.SetItemAsync(_authTokenName,response.Data);
-                AuthService.RefreshAuthState();
+                (AuthenticationStateProvider as CustomAuthenticationStateProvider).AuthStateChange();
             }
             OnClose?.Invoke();;
             await MessageService.Success("登录成功!");
@@ -71,8 +71,6 @@ Visible="true"
         {
             await MessageService.Error(response.Message);
         }
-
-
     }
 
     private void OnFinishFailed(EditContext editContext)
