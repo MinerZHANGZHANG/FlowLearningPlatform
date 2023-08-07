@@ -10,6 +10,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="FlowLearningPlatform.Test\**" />
+    <Content Remove="FlowLearningPlatform.Test\**" />
+    <EmbeddedResource Remove="FlowLearningPlatform.Test\**" />
+    <None Remove="FlowLearningPlatform.Test\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="AntDesign" Version="0.15.3" />
     <PackageReference Include="Blazored.LocalStorage" Version="4.3.0" />
     <PackageReference Include="Blazored.TextEditor" Version="1.1.0" />

@@ -5,28 +5,33 @@ namespace FlowLearningPlatform.Data
 {
     public class DataContext : DbContext
     {
-        public DbSet<Assignment> Assignments { get; set; }
-        public DbSet<AssignmentDivision> AssignmentDivisions { get; set; }
-        public DbSet<Course> Courses { get; set; }
-        public DbSet<FileData> FileDatas { get; set; }
-        public DbSet<FileSet> FileSets { get; set; }
-        public DbSet<Submission> Submissions { get; set; }
-        public DbSet<User> Users { get; set; }
+        public virtual  DbSet<Assignment> Assignments { get; set; }
+        public virtual  DbSet<AssignmentDivision> AssignmentDivisions { get; set; }
+        public virtual DbSet<Course> Courses { get; set; }
+        public virtual DbSet<FileData> FileDatas { get; set; }
+        public virtual DbSet<FileSet> FileSets { get; set; }
+        public virtual DbSet<Submission> Submissions { get; set; }
+        public virtual DbSet<User> Users { get; set; }
 
 
-        public DbSet<DepartmentType> DepartmentTypes { get; set; }
-        public DbSet<RoleType> RoleTypes { get; set; }
-        public DbSet<SchoolType> SchoolTypes { get; set; }
-        public DbSet<SubmissionType> SubmissionTypes { get; set; }
+        public virtual DbSet<DepartmentType> DepartmentTypes { get; set; }
+        public virtual DbSet<RoleType> RoleTypes { get; set; }
+        public virtual DbSet<SchoolType> SchoolTypes { get; set; }
+        public virtual DbSet<SubmissionType> SubmissionTypes { get; set; }
 
-        public DbSet<UserCourse> UserCourses { get; set; }  
+        public virtual DbSet<UserCourse> UserCourses { get; set; }  
 
         public DataContext(DbContextOptions<DataContext> options) : base(options)
         {
 
         }
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
+		public DataContext()
+		{
+
+		}
+
+		protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Assignment>()
                .HasOne(a => a.FileSet).WithMany()
