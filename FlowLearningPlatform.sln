@@ -5,7 +5,7 @@ VisualStudioVersion = 17.6.33815.320
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowLearningPlatform", "FlowLearningPlatform.csproj", "{698B5655-22CA-4513-910D-7C54EF2CDF26}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowLearningPlatform.Test", "FlowLearningPlatform.Test\FlowLearningPlatform.Test.csproj", "{BCC2B097-92CB-4ADD-AB97-6F72EA9BFF02}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowLearningPlatform.Test", "FlowLearningPlatform.Test\FlowLearningPlatform.Test.csproj", "{BCC2B097-92CB-4ADD-AB97-6F72EA9BFF02}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

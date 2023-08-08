@@ -1,37 +1,74 @@
 ﻿@page "/"
 
+@inject IAssignmentService AssignmentService
+@inject ICourseService CourseService
+@inject IAnnouncementService AnnouncementService
 
-<PageTitle>Index</PageTitle>
+<PageTitle>作业管理平台</PageTitle>
 
 <GridRow Gutter="@gutter">
     <GridCol Xs="GridProperty(24,1) " Sm="GridProperty(10,0) ">
-        <AntList Bordered DataSource="@data" Size="small">
-            <Header>Header</Header>
-            <ChildContent Context="item">
-                <ListItem>
-                    <span><Text Mark>[ITEM]</Text></span>@item
-                </ListItem>
-            </ChildContent>
-            <Footer>Footer</Footer>
-        </AntList>
+        <AuthorizeView Roles="教师,学生,管理员">
+            <Authorized>
+                @if (context.User.IsInRole("学生") || context.User.IsInRole("教师"))
+                {
+                    <AntList Bordered DataSource="@_assignmnets" Size="small">
+                        <Header>作业列表</Header>
+                        <ChildContent Context="item">
+                            <ListItem>
+                                <span>
+                                    [ @item.Deadline ]  <NavLink href="@($"/course/{@item.CourseId}")">@item.Title</NavLink>
+                                </span>
+                            </ListItem>
+                        </ChildContent>
+                        <Footer>相关作业数:@_assignmnets.Count</Footer>
+                    </AntList>
+                }
+                else 
+                {
+                    <AntList Bordered DataSource="@_courses" Size="small">
+                        <Header>课程列表</Header>
+                        <ChildContent Context="item">
+                            <ListItem>
+                                <span>
+                                    [ @item.CourseNumber]  <NavLink href="@($"/course/{@item.CourseId}")">@item.Name</NavLink>
+                                </span>
+                            </ListItem>
+                        </ChildContent>
+                        <Footer>
+                            <Pagination Current="@_coursePage" DefaultPageSize="@COURSEEACHPAGE" Total="@_totalCount" OnChange="@OnPageChanged"  HideOnSinglePage="true"></Pagination>
+                        </Footer>
+                    </AntList>
+                }
+
+                
+            </Authorized>
+            <NotAuthorized>
+                <div style="height:300px;width:stretch; background-color:white ; text-align:center;">
+                    <h2>欢迎来到这个站点</h2>
+                    <p>你尚未登录，请:</p>
+                    <UserButton></UserButton>
+                </div>
+
+            </NotAuthorized>
+        </AuthorizeView>
     </GridCol>
     <GridCol Xs="GridProperty(24,0)"  Sm="GridProperty(14,1) ">
        <div>
-
-                <Carousel Autoplay="TimeSpan.FromSeconds(5)">
-                    <CarouselSlick>
-                        <h3>1</h3>
-                    </CarouselSlick>
-                    <CarouselSlick>
-                        <h3>2</h3>
-                    </CarouselSlick>
-                    <CarouselSlick>
-                        <h3>3</h3>
-                    </CarouselSlick>
-                    <CarouselSlick>
-                        <h3>4</h3>
-                    </CarouselSlick>
-                </Carousel>
+            <Carousel Autoplay="TimeSpan.FromSeconds(5)">
+                <CarouselSlick>
+                    <h3>1</h3>
+                </CarouselSlick>
+                <CarouselSlick>
+                    <h3>2</h3>
+                </CarouselSlick>
+                <CarouselSlick>
+                    <h3>3</h3>
+                </CarouselSlick>
+                <CarouselSlick>
+                    <h3>4</h3>
+                </CarouselSlick>
+            </Carousel>
 
        </div>
        <div>
@@ -39,11 +76,30 @@
                 @for (int i = 0; i < 4; i++)
                 {
                     <GridCol Xs="12" Md="6">
-                    <Card Title="Temp">
-                        <Body>
-                            hhh
-                        </Body>
-                    </Card>
+                        @if(_announcements.Count>0)
+                        {
+                            <Card Bordered Hoverable>
+                                <TitleTemplate>
+                                    <Icon Type="@_announcements[i%_announcements.Count].Icon" Theme="outline"/>
+                                    @_announcements[i%_announcements.Count].Title
+                                </TitleTemplate>
+                                <Extra>
+                                    <NavLink href="@($"/announcement/{_announcements[i%_announcements.Count].Title}")"></NavLink>
+                                </Extra>
+                                <Body>
+                                    @_announcements[i%_announcements.Count].SubTitle
+                                </Body>
+                            </Card>
+                        }
+                        else
+                        {
+                            <Card Title="公告" Bordered Hoverable>
+                                <Body>
+                                    <p>暂无公告</p>
+                                </Body>
+                            </Card>
+                        }
+
                     </GridCol>
 
                 }
@@ -68,6 +124,49 @@
 </style>
 
 @code{
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? _authenticationState { get; set; }
+
+    private List<Assignment> _assignmnets = new();
+
+    private List<Models.Course> _courses = new();
+    private int _totalCount = 0;
+    private int _coursePage = 0;
+    private const int COURSEEACHPAGE= 10;
+
+    private List<Announcement> _announcements = new();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var state= await _authenticationState;
+        var user = state.User;
+
+        if (user.IsInRole("教师") || user.IsInRole("学生"))
+        {
+            var userId =Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier));
+            var response= await AssignmentService.GetLastByUserIdAsync(userId);
+            if (response.Success)
+            {
+                _assignmnets = response.Data??new();
+            }
+        }
+        else if(user.IsInRole("管理员"))
+        {
+            _courses = await CourseService.GetAllAsync(_coursePage, COURSEEACHPAGE);
+            _totalCount = await CourseService.GetCount();
+        }
+
+        _announcements =await AnnouncementService.GetAllAsync(0, 4);
+
+        await base.OnParametersSetAsync();
+    }
+
+    private async void OnPageChanged(PaginationEventArgs e)
+    {
+        _courses = await CourseService.GetAllAsync(e.Page, COURSEEACHPAGE);
+    }
+
     EmbeddedProperty GridProperty(int span, int order) => new() { Span = span, Order = order };
     Dictionary<string, int> gutter = new()
     {
@@ -78,14 +177,7 @@
         ["xl"] = 48,
         ["xxl"] = 64
     };
-    public List<string> data = new List<string>
-    {
-        "Racing car sprays burning fuel into crowd.",
-        "Japanese princess to wed commoner.",
-        "Australian walks 100km after outback crash.",
-        "Man charged over missing wedding girl.",
-        "Los Angeles battles huge wildfires."
-    };
+
 
 
 

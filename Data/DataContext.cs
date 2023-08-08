@@ -5,14 +5,14 @@ namespace FlowLearningPlatform.Data
 {
     public class DataContext : DbContext
     {
-        public virtual  DbSet<Assignment> Assignments { get; set; }
-        public virtual  DbSet<AssignmentDivision> AssignmentDivisions { get; set; }
+        public virtual DbSet<Assignment> Assignments { get; set; }
+        public virtual DbSet<AssignmentDivision> AssignmentDivisions { get; set; }
         public virtual DbSet<Course> Courses { get; set; }
         public virtual DbSet<FileData> FileDatas { get; set; }
         public virtual DbSet<FileSet> FileSets { get; set; }
         public virtual DbSet<Submission> Submissions { get; set; }
         public virtual DbSet<User> Users { get; set; }
-
+        public virtual DbSet<Announcement> Announcements { get; set; }
 
         public virtual DbSet<DepartmentType> DepartmentTypes { get; set; }
         public virtual DbSet<RoleType> RoleTypes { get; set; }
@@ -20,7 +20,7 @@ namespace FlowLearningPlatform.Data
         public virtual DbSet<SubmissionType> SubmissionTypes { get; set; }
 
         public virtual DbSet<UserCourse> UserCourses { get; set; }  
-
+        
         public DataContext(DbContextOptions<DataContext> options) : base(options)
         {
 

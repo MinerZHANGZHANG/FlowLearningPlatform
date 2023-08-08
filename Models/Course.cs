@@ -21,5 +21,7 @@ namespace FlowLearningPlatform.Models
 
         public List<Assignment> Assignments { get; set; }
         public List<User> Users { get; set; } // 这个课程的相关用户 包括学生和老师
+
+        public bool IsOver { get; set; } = false;
     }
 }

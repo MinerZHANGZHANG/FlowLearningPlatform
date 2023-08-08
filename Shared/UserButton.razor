@@ -13,6 +13,12 @@
                     <MenuItem>
                         <a @onclick="(_)=>Profile()">个人资料</a>
                     </MenuItem>
+                    @if (context.User.IsInRole("管理员"))
+                    {
+                        <MenuItem>
+                            <a @onclick="(_)=> ManagerBoard()">公告管理</a>
+                        </MenuItem>
+                    }
                     <MenuItem>
                         <a @onclick="(_)=>Logout()">注销</a>
                     </MenuItem>
@@ -63,6 +69,12 @@
     {
         NavigationManager.NavigateTo("/course");
     }
+
+    private void ManagerBoard()
+    {
+        NavigationManager.NavigateTo("/announcement");
+    }
+
 
     private void CloseModalByLocation(object? sender, LocationChangedEventArgs e)
     {

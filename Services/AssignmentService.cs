@@ -5,10 +5,13 @@ namespace FlowLearningPlatform.Services
 	{
 		// 获取作业信息
 		Task<List<Assignment>> GetAllAsync();
+		public Task<ServiceResponse<Assignment>> GetByIdAsync(Guid assignmentId);
 		public Task<ServiceResponse<List<Assignment>>> GetAllByCourseIdAsync(Guid CourseId);
 		public Task<ServiceResponse<List<StudentAssignmentState>>> GetStateByStudentCourseAsync(Guid studentId,Guid courseId);
 		public Task<ServiceResponse<List<TeacherAssignmentState>>> GetStateByTeacherCourseAsync(Guid teacherId,Guid courseId);
-        public Task<ServiceResponse<Assignment>> GetByIdAsync(Guid assignmentId);
+
+		public Task<ServiceResponse<List<Assignment>>> GetLastByUserIdAsync(Guid userId,int number=10);
+
 
 		// 对作业进行增删改
         public Task<ServiceResponse<Assignment>> AddAssignment(PublishHomework publishHomework);
@@ -151,7 +154,50 @@ namespace FlowLearningPlatform.Services
 			return response;
 		}
 
-        public async Task<ServiceResponse<List<StudentAssignmentState>>> GetStateByStudentCourseAsync(Guid studentId, Guid courseId)
+		public async Task<ServiceResponse<List<Assignment>>> GetLastByUserIdAsync(Guid userId, int number = 10)
+		{
+			ServiceResponse<List<Assignment>> response = new() { Success = false };
+
+			try
+			{
+				using (var context =await _dbContextFactory.CreateDbContextAsync())
+				{
+					var coursesId = await context.UserCourses
+						.AsNoTracking()
+						//.Include(uc=>uc.Course)
+						.Where(uc => uc.UserId == userId && !uc.Course.IsOver)
+						.Select(uc => uc.CourseId)
+						.ToListAsync();
+
+					var assignments =await context.Assignments
+						.AsNoTracking()
+						.Where(a => coursesId.Contains(a.CourseId) && a.Deadline > DateTime.Now)
+						.OrderBy(a => a.Deadline)
+						.Take(number)
+						.ToListAsync();
+					
+					if (assignments != null&&assignments.Count>0)
+					{											
+						response.Success = true;
+						response.Data = assignments;
+						
+					}
+					else
+					{
+						response.Message = "你没有待完成的作业";
+					}
+				}
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex.Message);
+			}
+
+			return response;
+		}
+
+
+		public async Task<ServiceResponse<List<StudentAssignmentState>>> GetStateByStudentCourseAsync(Guid studentId, Guid courseId)
 		{
 			ServiceResponse<List<StudentAssignmentState>> response = new() { Success = false };
 
