@@ -1,10 +1,14 @@
-﻿namespace FlowLearningPlatform.Services
+﻿using System.Collections.Generic;
+using System.Drawing.Printing;
+
+namespace FlowLearningPlatform.Services
 {
     public interface IAnnouncementService
     {
         Task<int> GetCountAsync();
         Task<List<Announcement>> GetAllAsync(int pageIndex, int pageSize);
-        Task<Announcement> GetByIdAsync(Guid id);
+        Task<Announcement?> GetByIdAsync(Guid id);
+        Task<ServiceResponse<Announcement>> AddAsync(AddAnnouncement addAnnouncement);
     }
     public class AnnouncementService:IAnnouncementService
     {
@@ -17,19 +21,75 @@
             _logger = logger;
         }
 
-        public Task<List<Announcement>> GetAllAsync(int pageIndex, int pageSize)
+        public async Task<ServiceResponse<Announcement>> AddAsync(AddAnnouncement addAnnouncement)
         {
-            throw new NotImplementedException();
+            ServiceResponse<Announcement> response = new() { Success = false };
+            try
+            {
+                using (var context = await _dbContextFactory.CreateDbContextAsync())
+                {
+                    Announcement announcement = new Announcement()
+                    {
+                        AnnouncementId = Guid.NewGuid(),
+                        Title = addAnnouncement.Title,
+                        SubTitle = addAnnouncement.SubTitle,
+                        CreateTime = DateTime.Now,
+                        UpdateTime = DateTime.Now,
+                        HtmlText = addAnnouncement.HtmlText,
+                        Icon = addAnnouncement.Icon,
+                        UserId = addAnnouncement.UserId,
+                    };
+
+                    await context.Announcements.AddAsync(announcement);
+                    await context.SaveChangesAsync();
+                    response.Success = true;
+                    response.Data = announcement;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+            }
+            return response;
         }
 
-        public Task<Announcement> GetByIdAsync(Guid id)
+        public async Task<List<Announcement>> GetAllAsync(int pageIndex, int pageSize)
         {
-            throw new NotImplementedException();
+            List<Announcement> result = new();
+            using (var context = await _dbContextFactory.CreateDbContextAsync())
+            {
+                result.AddRange(
+                    await context.Announcements
+                    .AsNoTracking()
+                    .OrderByDescending(a => a.UpdateTime)
+                    .Skip(pageIndex * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync());
+            }
+            return result;
         }
 
-        public Task<int> GetCountAsync()
+        public async Task<Announcement?> GetByIdAsync(Guid id)
         {
-            throw new NotImplementedException();
+            Announcement? result;
+            using (var context = await _dbContextFactory.CreateDbContextAsync())
+            {
+                result=await context.Announcements
+                    .AsNoTracking()
+                    .Include(a=>a.User)
+                    .FirstOrDefaultAsync(a=>a.AnnouncementId == id);
+            }
+            return result;
+        }
+
+        public async Task<int> GetCountAsync()
+        {
+            int result = 0;
+            using (var context = await _dbContextFactory.CreateDbContextAsync())
+            {
+                result = await context.Announcements.CountAsync();
+            }
+            return result;
         }
     }
 }

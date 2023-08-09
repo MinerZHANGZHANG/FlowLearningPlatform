@@ -5,8 +5,6 @@ using FlowLearningPlatform.Models;
 using FlowLearningPlatform.Models.Enum;
 using FlowLearningPlatform.Services;
 using Microsoft.EntityFrameworkCore;
-using Moq.EntityFrameworkCore;
-using NUnit.Framework;
 
 namespace FlowLearningPlatform.Test
 {
