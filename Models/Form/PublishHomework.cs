@@ -20,7 +20,10 @@ namespace FlowLearningPlatform.Models.Form
         public bool AutoRename { get; set; }
         public Guid? FileSetId { get; set; }
 
-        public List<AssignmentDivision> AssignmentDivisions { get; set; }
+        //public List<AssignmentDivision> AssignmentDivisions { get; set; }
+        public double FileSizeLimit { get; set; } = 50 * 1024 * 1024;
+        public FileType FileTypeLimit { get; set; } = FileType.无;
+
 
         [JsonIgnore]
         public DateTime StartTime { get { return TimeRange[0]; }set { TimeRange[0] = value; } }

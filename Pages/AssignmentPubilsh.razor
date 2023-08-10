@@ -20,8 +20,8 @@
     <FormItem Label="描述">
         <TextArea @bind-Value="@context.Description" />
     </FormItem>
-    <FormItem Label="课程号">
-        <Text>@CourseId.ToString()</Text>
+    <FormItem Label="课程">
+        <Text>@_course.Name</Text>
     </FormItem>
 
     <FormItem Label="立即发布">
@@ -53,25 +53,13 @@
     @if (_isFileLimited)
     {
         <div>
-            
-@*          
-            其它逻辑
-            <Slider TValue="double" Min="1" Max="100"  @bind-Value="AddWorkParts[0].FileSizeLimite" />
-            <AntDesign.InputNumber Min="1" Max="100"   Style="margin:0 16px;" @bind-Value="AddWorkParts[0].FileSizeLimite" TValue="double" />
-            <p>(MB)</p>*@
-            <hr>
-@*            <EnumSelect @bind-Value="AddWorkParts[0].FileTypeLimite"  TEnum="WorkType"/>*@
-
+            <EnumSelect @bind-Value="context.FileTypeLimit" TEnum="FileType" />
+            <Slider TValue="double" Min="1" Max="100" @bind-Value="context.FileSizeLimit" />
+            <AntDesign.InputNumber Min="1" Max="100" Style="margin:0 16px;" @bind-Value="context.FileSizeLimit" TValue="double" />
         </div>       
     }
-
-    <Text>作业提交：默认 @AddWorkParts.Count 个作业</Text>
-    
-@*    <Form Model="@PublicHomework.Partworks">
-
-    </Form>*@
-
-
+    <hr>
+    <Text>附件</Text>  
     <Upload Action="https://www.mocky.io/v2/5cc8019d300000980a055e76"
             Name="files"
             Drag
@@ -94,7 +82,7 @@
 </Form>
 
 <Button Icon="plus" Type="primary" @onclick="_=>OpenDiyDrawer()">自定义作业提交</Button>
-<Drawer Closable="true" Width="720" Visible="_diyHomework" Title='("更准确地定义作业提交")' OnClose="_=>OnDiyDrawerClosed()">
+<Drawer Closable="true" Width="720" Visible="_diyHomework" Title='("更准确地定义作业提交(未完成)")' OnClose="_=>OnDiyDrawerClosed()">
     <Template style="height:90%">
         <Form Model="@AddWorkPart"
               LabelColSpan="8"

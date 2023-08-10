@@ -29,5 +29,19 @@ namespace FlowLearningPlatform.Models
 
         public bool IsHiding { get; set; }=false;
         public bool AutoRename{ get; set; }=true;
+
+        public double FileSizeLimit { get; set; } = 50*1024*1024;
+        public FileType FileTypeLimit { get; set; } = FileType.无;
+
+    }
+
+    public enum FileType
+    {
+        无,
+        图片,
+        视频,
+        音频,
+        文档,
+        压缩文件,
     }
 }

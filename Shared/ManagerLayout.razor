@@ -6,49 +6,59 @@
     <Sider Breakpoint="@BreakpointType.Sm"
            CollapsedWidth="64" >
         <Affix OffsetTop="10">
-        <Menu Theme="MenuTheme.Dark" DefaultSelectedKeys=@(new[]{"1"}) Mode="MenuMode.Inline">
-            <MenuItem Key="1">
-                <Icon Type="pie-chart" Theme="outline" />
-                <span>Option 1</span>
-            </MenuItem>
-            <MenuItem Key="2">
-                <Icon Type="desktop" Theme="outline" />
-                <span>Option 2</span>
-            </MenuItem>
-            @{
-                RenderFragment sub1Title =
-                @<span>
-                    <Icon Type="user" Theme="outline" />
-                    <span>User</span>
-                </span>
-                ;
-            }
-            <SubMenu Key="sub1" TitleTemplate=sub1Title>
-                <MenuItem Key="3">Tom</MenuItem>
-                <MenuItem Key="4">Bill</MenuItem>
-                <MenuItem Key="5">Alex</MenuItem>
-            </SubMenu>
-            @{
-                RenderFragment sub2Title =
-                @<span>
-                    <Icon Type="team" Theme="outline" />
-                    <span>Team</span>
-                </span>
-                ;
-            }
-            <SubMenu Key="sub2" TitleTemplate=sub2Title>
-                <MenuItem Key="6">Team 1</MenuItem>
-                <MenuItem Key="8">Team 2</MenuItem>
-            </SubMenu>
-            <MenuItem Key="9">
-                <Icon Type="file" Theme="outline" />
-            </MenuItem>
-        </Menu>
+            <AuthorizeView Roles="教师,学生,管理员">
+                <Authorized>
+                    <Menu Theme="MenuTheme.Dark" DefaultSelectedKeys=@(new[]{"1"}) Mode="MenuMode.Inline">
+                    <MenuItem Key="0">
+                        <Icon Type="pie-chart" Theme="outline" />
+                        <NavLink href="/">返回首页</NavLink>
+                    </MenuItem>                   
+                    <MenuItem Key="2">
+                        <Icon Type="desktop" Theme="outline" />
+                        <NavLink href="/course">课程管理</NavLink>
+                    </MenuItem>
+                    @if(context.User.IsInRole("教师")||context.User.IsInRole("管理员"))
+                    {
+                        <MenuItem Key="1">
+                            <Icon Type="pie-chart" Theme="outline" />
+                            <NavLink href="/announcement">公告管理</NavLink>
+                        </MenuItem>
+                        if(context.User.IsInRole("管理员"))
+                        {
+                            RenderFragment sub1Title =
+                                @<span>
+                                    <Icon Type="user" Theme="outline" />
+                                    用户管理
+                                </span>
+                            ;
+                            <SubMenu Key="sub1" TitleTemplate=sub1Title>
+                                <MenuItem Key="3">教师</MenuItem>
+                                <MenuItem Key="4">学生</MenuItem>
+                            </SubMenu>
+                            <MenuItem Key="2">
+                                <Icon Type="desktop" Theme="outline" />
+                                <NavLink href="/course">网站配置</NavLink>
+                            </MenuItem>
+                        }                           
+                    }                                       
+                </Menu>
+                </Authorized>
+                <NotAuthorized>
+                    <Menu Theme="MenuTheme.Dark" DefaultSelectedKeys=@(new[]{"0"}) Mode="MenuMode.Inline">
+                        <MenuItem Key="0">
+                            <Icon Type="pie-chart" Theme="outline" />
+                            <NavLink href="/">返回首页(尚未登录)</NavLink>
+                        </MenuItem>
+                    </Menu>
+                </NotAuthorized>
+            </AuthorizeView>        
         </Affix>
     </Sider>
     <Layout Class="site-layout">
         <Header Class="site-layout-background" Style=" padding: 0 ;">
-            <UserButton></UserButton>
+            <div style="float:right;margin:0 16px;">
+                <UserButton/>
+            </div>           
         </Header>
         <Content Style="margin:0 16px;">
 @*            <Breadcrumb Style="margin:16px 0;">
@@ -59,7 +69,7 @@
                 @Body
             </div>
         </Content>
-        <Footer Style="text-align:center ">Ant Design ©2018 Created by Ant UED</Footer>
+        <Footer Style="text-align:center ">欢迎来到这个站点</Footer>
     </Layout>
 </Layout>
 

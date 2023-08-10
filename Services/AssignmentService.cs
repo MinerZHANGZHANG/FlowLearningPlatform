@@ -52,6 +52,9 @@ namespace FlowLearningPlatform.Services
 
                         Submissions = new(),
                         AutoRename = publishHomework.AutoRename,
+
+						FileSizeLimit = publishHomework.FileSizeLimit,
+						FileTypeLimit = publishHomework.FileTypeLimit,
                     };
 
 					await context.Assignments.AddAsync(assignment);

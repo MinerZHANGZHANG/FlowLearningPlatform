@@ -8,8 +8,12 @@
             <UserButton />
         </div>
         <Menu Theme="MenuTheme.Dark" Mode="MenuMode.Horizontal" DefaultSelectedKeys=@(new[]{"1"})>
-            <MenuItem Key="1">nav 1</MenuItem>
-            <MenuItem Key="2">nav 2</MenuItem>
+            <MenuItem Key="1">
+                <NavLink href="/">首页</NavLink>
+            </MenuItem>
+            <MenuItem Key="2">
+                <NavLink href="/course">课程</NavLink>
+            </MenuItem>
         </Menu>
 
     </Header>

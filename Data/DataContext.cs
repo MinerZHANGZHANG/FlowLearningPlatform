@@ -17,7 +17,6 @@ namespace FlowLearningPlatform.Data
         public virtual DbSet<DepartmentType> DepartmentTypes { get; set; }
         public virtual DbSet<RoleType> RoleTypes { get; set; }
         public virtual DbSet<SchoolType> SchoolTypes { get; set; }
-        public virtual DbSet<SubmissionType> SubmissionTypes { get; set; }
 
         public virtual DbSet<UserCourse> UserCourses { get; set; }  
         
@@ -89,15 +88,15 @@ namespace FlowLearningPlatform.Data
                 new DepartmentType() { DepartmentTypeId = Guid.Parse("F7773807-01A5-4825-8A11-F4C0B44A9F2C"), Name = "通信工程", SchoolId = guidi }
             );
 
-            modelBuilder.Entity<SubmissionType>().HasData(
-                new SubmissionType() { SubmissionTypeId = Guid.Parse("61177543-DBD7-4789-B4AE-DA4CB737E60A"), Name = "未确定" },
-                new SubmissionType() { SubmissionTypeId = Guid.Parse("7C95E7AF-7FDC-4755-91E0-E679731CEA23"), Name = "富文本" },
-                new SubmissionType() { SubmissionTypeId = Guid.Parse("3CC124A8-4FE3-4810-B8CF-3DDC833DACE3"), Name = "文档" },
-                new SubmissionType() { SubmissionTypeId = Guid.Parse("A5E0FC18-D5FC-45C3-B210-0CB6A1A9FB5A"), Name = "图片" },
-                new SubmissionType() { SubmissionTypeId = Guid.Parse("7D8F51A2-0CE2-43A0-A4C0-CB536A39358B"), Name = "视频" },
-                new SubmissionType() { SubmissionTypeId = Guid.Parse("15352BB8-E5E3-4152-BFD9-1C72B4DB7B45"), Name = "音频" },
-                new SubmissionType() { SubmissionTypeId = Guid.Parse("2051B2B2-80E1-4E8C-B8C9-6C20A9AC214B"), Name = "压缩包" }
-            );
+            //modelBuilder.Entity<SubmissionType>().HasData(
+            //    new SubmissionType() { SubmissionTypeId = Guid.Parse("61177543-DBD7-4789-B4AE-DA4CB737E60A"), Name = "未确定" },
+            //    new SubmissionType() { SubmissionTypeId = Guid.Parse("7C95E7AF-7FDC-4755-91E0-E679731CEA23"), Name = "富文本" },
+            //    new SubmissionType() { SubmissionTypeId = Guid.Parse("3CC124A8-4FE3-4810-B8CF-3DDC833DACE3"), Name = "文档" },
+            //    new SubmissionType() { SubmissionTypeId = Guid.Parse("A5E0FC18-D5FC-45C3-B210-0CB6A1A9FB5A"), Name = "图片" },
+            //    new SubmissionType() { SubmissionTypeId = Guid.Parse("7D8F51A2-0CE2-43A0-A4C0-CB536A39358B"), Name = "视频" },
+            //    new SubmissionType() { SubmissionTypeId = Guid.Parse("15352BB8-E5E3-4152-BFD9-1C72B4DB7B45"), Name = "音频" },
+            //    new SubmissionType() { SubmissionTypeId = Guid.Parse("2051B2B2-80E1-4E8C-B8C9-6C20A9AC214B"), Name = "压缩包" }
+            //);
 
             base.OnModelCreating(modelBuilder);
         }

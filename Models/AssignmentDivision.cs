@@ -20,7 +20,7 @@ namespace FlowLearningPlatform.Models
         //[ForeignKey(nameof(FileSet))]
         //public Guid FileSetId { get; set; }
         //public FileSet FileSet { get; set; }      
-        public SubmissionType SubmissionType { get; set; }
+        //public SubmissionType SubmissionType { get; set; }
         public float FileSizeLimite { get; set; }
     }
 
