@@ -10,17 +10,17 @@
                 <Authorized>
                     <Menu Theme="MenuTheme.Dark" DefaultSelectedKeys=@(new[]{"1"}) Mode="MenuMode.Inline">
                     <MenuItem Key="0">
-                        <Icon Type="pie-chart" Theme="outline" />
+                        <Icon Type="home" Theme="outline" />
                         <NavLink href="/">返回首页</NavLink>
                     </MenuItem>                   
                     <MenuItem Key="2">
-                        <Icon Type="desktop" Theme="outline" />
+                        <Icon Type="solution" Theme="outline" />
                         <NavLink href="/course">课程管理</NavLink>
                     </MenuItem>
                     @if(context.User.IsInRole("教师")||context.User.IsInRole("管理员"))
                     {
                         <MenuItem Key="1">
-                            <Icon Type="pie-chart" Theme="outline" />
+                            <Icon Type="notification" Theme="outline" />
                             <NavLink href="/announcement">公告管理</NavLink>
                         </MenuItem>
                         if(context.User.IsInRole("管理员"))
@@ -36,7 +36,7 @@
                                 <MenuItem Key="4">学生</MenuItem>
                             </SubMenu>
                             <MenuItem Key="2">
-                                <Icon Type="desktop" Theme="outline" />
+                                    <Icon Type="setting" Theme="outline" />
                                 <NavLink href="/course">网站配置</NavLink>
                             </MenuItem>
                         }                           
@@ -46,7 +46,7 @@
                 <NotAuthorized>
                     <Menu Theme="MenuTheme.Dark" DefaultSelectedKeys=@(new[]{"0"}) Mode="MenuMode.Inline">
                         <MenuItem Key="0">
-                            <Icon Type="pie-chart" Theme="outline" />
+                            <Icon Type="home" Theme="outline" />
                             <NavLink href="/">返回首页(尚未登录)</NavLink>
                         </MenuItem>
                     </Menu>

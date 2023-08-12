@@ -1,29 +1,96 @@
 ﻿@page "/announcement/{announcementId:guid}"
 @inject IAnnouncementService AnnouncementService
 
-<h3>AnnouncementDetail</h3>
-
 @if (_announcement != null)
 {
-	<h2>@_announcement.Title</h2>
-	<h4>@_announcement.SubTitle -- @_announcement.User.Name</h4>
-	<br />
+	<PageTitle>@_announcement.Title</PageTitle>
+}
 
-	<p>@((MarkupString)(@_announcement.HtmlText)) </p>
-}
-else
-{
-	<Empty/>
-}
+
+<Row Gutter="16">
+    <Col Lg="new EmbeddedProperty(){ Span=8,Order=0}" Xs="new EmbeddedProperty(){ Span=24,Order=1}">
+    <div class="sidebar-content">
+        <h4>最新公告</h4>
+        <ul>
+            @foreach (var latestAnnouncement in _latestAnnouncements)
+            {
+                <li>
+                    <NavLink href="@($"/announcement/{latestAnnouncement.AnnouncementId}")">
+                        @latestAnnouncement.Title
+                    </NavLink>
+                </li>
+            }
+        </ul>
+        <h4>作者的其它公告</h4>
+        <ul>
+            @if (_authorAnnouncements.Count > 0)
+            {
+                @foreach (var authorAnnouncement in _authorAnnouncements)
+                {
+                    <li>
+                        <NavLink href="@($"/announcement/{authorAnnouncement.AnnouncementId}")">
+                            @authorAnnouncement.Title
+                        </NavLink>
+                    </li>
+                }
+
+            }
+            else
+            {
+                <Empty/>
+            }
+                    
+        </ul>
+    </div>
+    </Col>
+    <Col Lg="new EmbeddedProperty(){ Span=16,Order=1}" Xs="new EmbeddedProperty(){ Span=24,Order=0}">
+    <Layout Style="margin:16px">
+            @if (_announcement != null)
+            {
+            <Header Style="background-color:gainsboro;text-align:center">
+                <h3>@_announcement.Title</h3>
+                <span>@_announcement.User.Name</span>
+                <span>@_announcement.UpdateTime.ToString("yyyy-MM-dd HH:mm")</span>
+                <br>
+            </Header>
+            <Content>
+                <Divider />
+                    @((MarkupString)(_announcement.HtmlText))
+            </Content>
+            }
+            else
+            {
+            <Empty />
+            }
+    </Layout>
+    </Col>  
+</Row>
+<Divider />
+
+<style>
+	.sidebar-content {
+		padding: 24px;
+		background-color: aliceblue;
+	}
+</style>
 
 @code {
 	[Parameter]
 	public Guid AnnouncementId{ get; set; }
 
+	private List<Announcement> _latestAnnouncements = new();
+	private List<Announcement> _authorAnnouncements=new();
+
 	private Announcement? _announcement;
 	protected override async Task OnParametersSetAsync()
 	{
 		_announcement= await AnnouncementService.GetByIdAsync(AnnouncementId);
+		if (_announcement != null)
+		{
+			_authorAnnouncements = await AnnouncementService.GetByAuthorId(_announcement.AnnouncementId);
+		}
+		_latestAnnouncements = await AnnouncementService.GetAllLatestAsync(0, 10);
+
 		await base.OnParametersSetAsync();
 	}
 }

@@ -1,0 +1,106 @@
+﻿@inject ISchoolService SchoolService
+@inject IDepartmentService DepartmentService
+@inject ICourseService CourseService
+@inject IMessageService MessageService
+
+<Button Icon="edit" Type="primary" @onclick="_=>open()">课程内容</Button>
+<div style="float:right;z-index:1000">
+    <Modal Visible="@visible"
+        Title="修改现有课程"
+        OnCancel="_=>close()"
+        Footer="null">
+        <Form @ref="_form" Model="@_updateCourse"
+              OnFinish="OnAddCourseFinish" Context="addCourse">
+            <DataAnnotationsValidator />
+            <FormItem Label="课程序号">
+                <Input @bind-Value="@addCourse.CourseNumber" />
+            </FormItem>
+            <FormItem Label="课程名称">
+                <Input @bind-Value="@addCourse.Name" />
+            </FormItem>
+            <FormItem Label="课程描述">
+                <Input @bind-Value="@addCourse.Description" />
+            </FormItem>
+            <FormItem Label="专业选择">
+                <Cascader Options="@_cascaderNodes" @bind-Value="@addCourse.DepartmentTypeId" />
+            </FormItem>
+            <FormItem WrapperColOffset="8" WrapperColSpan="16">
+                <Button Type="@ButtonType.Primary" HtmlType="submit">
+                    确认
+                </Button>
+            </FormItem>
+        </Form>
+    </Modal>
+</div>
+
+
+@code {
+    [Parameter]
+    public Action? OnAddSuccess{ get; set; }
+    [Parameter]
+    public Course Course{ get; set; }
+
+    private AddCourse _updateCourse = new();
+    private List<CascaderNode> _cascaderNodes = new();
+    private Form<AddCourse>? _form;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _updateCourse.CourseNumber = Course.CourseNumber;
+        _updateCourse.Name = Course.Name;
+        _updateCourse.Description = Course.Description;
+        _updateCourse.DepartmentTypeId = Course.DepartmentTypeId.ToString();
+
+
+        List<SchoolType> schoolTypes = await SchoolService.GetAllAsync();
+        _cascaderNodes.Clear();
+        foreach (var school in schoolTypes)
+        {
+            var departments = await DepartmentService.GetDepartmentBySchool(school);
+            var tempList = new List<CascaderNode>();
+            if (departments != null)
+            {
+                foreach (var department in departments)
+                {
+                    tempList.Add(new() { Label = department.Name, Value = department.DepartmentTypeId.ToString() });
+                }
+            }
+            _cascaderNodes.Add(new() { Label = school.Name, Value = school.SchoolTypeId.ToString(), Children = tempList });
+        }
+
+
+        await base.OnParametersSetAsync();
+    }
+
+    private async void OnAddCourseFinish()
+    {
+        Course.CourseNumber = _updateCourse.CourseNumber;
+        Course.Name = _updateCourse.Name;
+        Course.Description = _updateCourse.Description;
+        Course.DepartmentTypeId =Guid.Parse(_updateCourse.DepartmentTypeId);
+        var response = await CourseService.UpdateAsync(Course);
+        if (response.Success)
+        {
+            _form?.Reset();
+            close();
+            OnAddSuccess?.Invoke();
+            StateHasChanged();
+            await MessageService.Success("编辑成功!");
+        }
+        else
+        {
+            await MessageService.Error(response.Message);
+        }
+    }
+
+    bool visible = false;
+    void open()
+    {
+        this.visible = true;
+    }
+
+    void close()
+    {
+        this.visible = false;
+    }
+}

@@ -4,6 +4,8 @@
 @inject ICourseService CourseService
 @inject IAnnouncementService AnnouncementService
 
+@inject IConfiguration Configuration
+
 <PageTitle>作业管理平台</PageTitle>
 
 <GridRow Gutter="@gutter">
@@ -12,6 +14,7 @@
             <Authorized>
                 @if (context.User.IsInRole("学生") || context.User.IsInRole("教师"))
                 {
+                     <div style="margin-bottom:16px">
                     <AntList Bordered DataSource="@_assignmnets" Size="small">
                         <Header>作业列表</Header>
                         <ChildContent Context="item">
@@ -23,10 +26,29 @@
                         </ChildContent>
                         <Footer>相关作业数:@_assignmnets.Count</Footer>
                     </AntList>
+                    </div>
+
+                    if (context.User.IsInRole("学生"))
+                    {
+                        @if (_assignmnets.Any(a =>(new TimeSpan(a.Deadline.Ticks - DateTime.Now.Ticks)).TotalDays<1))
+                        {
+                                <Alert Type="@AlertType.Warning"
+                                       Message="你有一个课程作业即将截止"
+                                       ShowIcon="true"
+                            />
+                        }
+                        else
+                        {
+                            <Alert Type="@AlertType.Success"
+                                   Message="目前没有需要处理的事项"
+                                   ShowIcon="true" />
+                        }
+                    }
+
                 }
                 else 
                 {
-                    <AntList Bordered DataSource="@_courses" Size="small">
+                    <AntList Style="margin-bottom:16px" Bordered DataSource="@_courses" Size="small">
                         <Header>课程列表</Header>
                         <ChildContent Context="item">
                             <ListItem>
@@ -39,9 +61,12 @@
                             <Pagination Current="@_coursePage" DefaultPageSize="@COURSEEACHPAGE" Total="@_totalCount" OnChange="@OnPageChanged"  HideOnSinglePage="true"></Pagination>
                         </Footer>
                     </AntList>
+                    <Alert Type="@AlertType.Success"
+                           Message="目前没有需要处理的事项"
+                           ShowIcon="true" />
                 }
 
-                
+
             </Authorized>
             <NotAuthorized>
                 <div style="height:300px;width:stretch; background-color:white ; text-align:center;">
@@ -57,16 +82,16 @@
        <div style="margin-bottom:16px">
             <Carousel Autoplay="TimeSpan.FromSeconds(5)">
                 <CarouselSlick>
-                    <h3>1</h3>
+                    <Image Width="100%" Height="40vh" Src="@Configuration.GetSection("AppSettings:LoopImage1").Value" />
                 </CarouselSlick>
                 <CarouselSlick>
-                    <h3>2</h3>
+                    <Image Width="100%" Height="40vh" Src="@Configuration.GetSection("AppSettings:LoopImage2").Value" />
                 </CarouselSlick>
                 <CarouselSlick>
-                    <h3>3</h3>
+                    <Image Width="100%" Height="40vh" Src="@Configuration.GetSection("AppSettings:LoopImage3").Value" />
                 </CarouselSlick>
                 <CarouselSlick>
-                    <h3>4</h3>
+                    <Image Width="100%" Height="40vh" Src="@Configuration.GetSection("AppSettings:LoopImage4").Value" />
                 </CarouselSlick>
             </Carousel>
 
@@ -79,9 +104,8 @@
                     int index = i;
                     <GridCol Xs="12" Md="6">
                         @if(_announcements.Count>0)
-                        {
-                    
-                            <Card Bordered Hoverable>
+                        {                   
+                            <Card Bordered Hoverable Style="margin-bottom:8px">
                                 <TitleTemplate>
                                 <Icon Type="@_announcements[index%_announcements.Count].Icon" Theme="outline" />
                                 @_announcements[index%_announcements.Count].Title
@@ -114,9 +138,9 @@
 <style>
     .ant-carousel .slick-slide {
         text-align: center;
-        height: 160px;
-        line-height: 160px;
-        background: #364d79;
+        border:thin;
+        border-width:2px;
+/*        background: #364d79;*/
         overflow: hidden;
     }
 
@@ -159,7 +183,7 @@
             _totalCount = await CourseService.GetCount();
         }
 
-        _announcements =await AnnouncementService.GetAllAsync(0, 4);
+        _announcements =await AnnouncementService.GetAllLatestAsync(0, 4);
 
         await base.OnParametersSetAsync();
     }

@@ -12,6 +12,7 @@ namespace FlowLearningPlatform.Services
         Task<ServiceResponse<Course>> GetByIdAsync(Guid courseId);
         Task<ServiceResponse<List<Course>>> GetByUserIdAsync(string UserId);
         Task<ServiceResponse<string>> AddAsync(AddCourse addCourse);
+        Task<ServiceResponse<Course>> UpdateAsync(Course updateCourse);
 
     }
 
@@ -214,5 +215,42 @@ namespace FlowLearningPlatform.Services
 			}
 			return result;
 		}
-	}
+
+        public async Task<ServiceResponse<Course>> UpdateAsync(Course updateCourse)
+        {
+            ServiceResponse<Course> response = new() { Success = false };
+            try
+            {
+                using (var context = await _dbContextFactory.CreateDbContextAsync())
+                {
+                    Course? course = await context.Courses.FindAsync(updateCourse.CourseId);
+                    if(course==null)
+                    {
+                        response.Message = "不存在的课程编号";
+                        return response;
+                    }
+                    else
+                    {
+                        course.CourseNumber = updateCourse.CourseNumber;
+                        course.Name = updateCourse.Name;
+                        course.Description = updateCourse.Description;
+                        course.DepartmentTypeId = updateCourse.DepartmentTypeId;                    
+                        await context.SaveChangesAsync();
+                        response.Data = course;
+                        response.Success = true;
+                    }                   
+                }
+
+                response.Success = true;
+                return response;
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                response.Message = "发生错误请联系管理员";
+                return response;
+            }
+        }
+    }
 }

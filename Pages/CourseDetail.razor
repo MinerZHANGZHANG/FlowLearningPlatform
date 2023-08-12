@@ -41,11 +41,13 @@
 			<PropertyColumn Property="a=>a.Title" Title="名称">
 				<p>@context.Title</p>
 			</PropertyColumn>
-			<PropertyColumn Property="a=>a.UpdateTime" Title="发布时间">
-				<p>@context.UpdateTime.ToString("yy年MM月dd日")</p>
+			<PropertyColumn Property="a=>a.UpdateTime" Title="发布时间">S
+				<p>@context.UpdateTime.ToString("yy年MM月dd日")</p>				
 			</PropertyColumn>
 			<PropertyColumn Sortable="true" Property="a=>a.Deadline" Title="截止时间">
-				<p>@context.Deadline.ToString("yy年MM月dd日")</p>
+				<Tooltip Title="该日期的24:00截止">
+					<p>@context.Deadline.ToString("yy年MM月dd日")</p>
+				</Tooltip>
 			</PropertyColumn>
 			<PropertyColumn Property="a=>a.SubmissionCount" Title="状态">
 				@if (context.Deadline < DateTime.Now)
@@ -86,7 +88,9 @@
 				<p>@context.UpdateTime.ToString("yy年MM月dd日")</p>
 			</PropertyColumn>
 			<PropertyColumn Sortable="true" Property="a=>a.Deadline" Title="截止时间">
-				<p>@context.Deadline.ToString("yy年MM月dd日")</p>
+				<Tooltip Title="该日期的24:00截止">
+					<p>@context.Deadline.ToString("yy年MM月dd日")</p>
+				</Tooltip>
 			</PropertyColumn>
 			<PropertyColumn Property="a=>a.SubmissionCount" Title="状态">
 				@if (context.Deadline < DateTime.Now)

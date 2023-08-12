@@ -154,6 +154,9 @@
     {
         PublicHomework.CourseId = CourseId;
         PublicHomework.FileSetId = null;
+        // 默认截止时间为当天的24:00
+        PublicHomework.DeadLine = PublicHomework.DeadLine.AddDays(1).Date;
+
         var response= await AssignmentService.AddAssignment(PublicHomework);
         if (response.Success)
         {

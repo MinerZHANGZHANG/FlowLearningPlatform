@@ -6,8 +6,9 @@ namespace FlowLearningPlatform.Services
     public interface IAnnouncementService
     {
         Task<int> GetCountAsync();
-        Task<List<Announcement>> GetAllAsync(int pageIndex, int pageSize);
+        Task<List<Announcement>> GetAllLatestAsync(int pageIndex, int pageSize);
         Task<Announcement?> GetByIdAsync(Guid id);
+        Task<List<Announcement>> GetByAuthorId(Guid authorId,int maxSize=10);
         Task<ServiceResponse<Announcement>> AddAsync(AddAnnouncement addAnnouncement);
     }
     public class AnnouncementService:IAnnouncementService
@@ -53,7 +54,7 @@ namespace FlowLearningPlatform.Services
             return response;
         }
 
-        public async Task<List<Announcement>> GetAllAsync(int pageIndex, int pageSize)
+        public async Task<List<Announcement>> GetAllLatestAsync(int pageIndex, int pageSize)
         {
             List<Announcement> result = new();
             using (var context = await _dbContextFactory.CreateDbContextAsync())
@@ -69,7 +70,24 @@ namespace FlowLearningPlatform.Services
             return result;
         }
 
-        public async Task<Announcement?> GetByIdAsync(Guid id)
+		public async Task<List<Announcement>> GetByAuthorId(Guid authorId, int maxSize = 10)
+		{
+			List<Announcement> result = new();
+			using (var context = await _dbContextFactory.CreateDbContextAsync())
+			{
+				result.AddRange(
+					await context.Announcements
+					.AsNoTracking()
+                    .Include(a=>a.User)
+					.OrderByDescending(a => a.UpdateTime)
+					.Where(a=>a.UserId == authorId)
+					.Take(maxSize)
+					.ToListAsync());
+			}
+			return result;
+		}
+
+		public async Task<Announcement?> GetByIdAsync(Guid id)
         {
             Announcement? result;
             using (var context = await _dbContextFactory.CreateDbContextAsync())

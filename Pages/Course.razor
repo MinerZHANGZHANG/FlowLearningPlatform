@@ -29,8 +29,8 @@
 							<p>@context.DepartmentType.Name</p>
 						</PropertyColumn>
 						<ActionColumn Title="操作">
-							<Button Icon="plus" Type="primary" @onclick="_=>open(context.CourseId)">用户</Button>						
-							<Button Icon="plus" Type="primary" @onclick="_=>open(context.CourseId)">课程信息</Button>						
+							<Button Icon="user" Type="primary" @onclick="_=>open(context.CourseId)">用户</Button>
+							<UpdateCourseButton Course="context" OnAddSuccess="async ()=>_courses = await CourseService.GetAllAsync(0, 10)" />
 						</ActionColumn>
 					</Table>
 					
@@ -126,12 +126,12 @@
 		this.visible = false;
 	}
 
-	private List<UserWithCourse> _userWithCourses;
+	private List<UserWithCourse> _userWithCourses=new();
 	// 获取课程所在专业的用户
 	// 或许需要加入对其它专业的检索
 	private async void GetUserWithCourseId(Guid courseId)
 	{
-		var _userWithCourses = await UserService.GetUserWithCourseAsync(courseId);
+		 _userWithCourses = await UserService.GetUserWithCourseAsync(courseId);
 	}
 	#endregion
 }

@@ -6,7 +6,8 @@
 
 @*// TODO: 返回更新结果到父组件*@
 <Button Icon="plus" Type="primary" @onclick="_=>open()">课程添加</Button>
-<Drawer Closable="true" Width="720" Visible="@visible" Title='("Submit from in Drawer")' OnClose="_=>close()">
+
+<Drawer Closable="true" Width="720" Visible="@visible" Title='("添加新课程")' OnClose="_=>close()">
     <Template style="height:90%">
         <Form @ref="_form" Model="@_addCourse"
               OnFinish="OnAddCourseFinish" Context="addCourse">
@@ -23,7 +24,6 @@
             <FormItem Label="专业选择">
                 <Cascader SelectedNodesChanged="OnDepartmentIdChanged" Options="@_cascaderNodes" @bind-Value="@addCourse.DepartmentTypeId" />
             </FormItem>
-            <ValidationSummary />
             <FormItem Label="人员添加">
                 <Select Mode="multiple"
                         Placeholder="Please select"
