@@ -3,6 +3,8 @@
 @attribute [Authorize(Roles ="教师，管理员")]
 
 @inject IAnnouncementService AnnouncementService
+@inject IMessageService MessageService
+@inject NavigationManager NavigationManager
 
 @using Blazored.TextEditor
 
@@ -18,66 +20,70 @@
                    <Input @bind-Value="@context.SubTitle" />
               </FormItem>
               <FormItem Label="公告标签(可选)">
-                  <SimpleSelect @bind-Value="@context.Icon" DataSource="@_iconList"></SimpleSelect>
+                <RadioGroup @bind-Value="@context.Icon">
+                    @foreach (var iconName in _iconList)
+                    {
+                        <Radio Value="@iconName">
+                            <Icon Type="@iconName" Theme="outline"/>
+                        </Radio>
+                    }
+                </RadioGroup>
               </FormItem>
-              <FormItem>
-                <Button HtmlType="submit">
-                    提交
-                </Button>
-              </FormItem>
-            <BlazoredTextEditor @ref="@_quillHtml" Placeholder="公告正文">
-                <ToolbarContent>
-                    <select class="ql-header">
-                        <option selected=""></option>
-                        <option value="1"></option>
-                        <option value="2"></option>
-                        <option value="3"></option>
-                        <option value="4"></option>
-                        <option value="5"></option>
-                    </select>
-                    <span class="ql-formats">
-                        <button class="ql-bold"></button>
-                        <button class="ql-italic"></button>
-                        <button class="ql-underline"></button>
-                        <button class="ql-strike"></button>
-                    </span>
-                    <span class="ql-formats">
-                        <select class="ql-color"></select>
-                        <select class="ql-background"></select>
-                    </span>
-                    <span class="ql-formats">
-                        <button class="ql-list" value="ordered"></button>
-                        <button class="ql-list" value="bullet"></button>
-                    </span>
-                    <span class="ql-formats">
-                        <button class="ql-link"></button>
-                    </span>
-                    <span class="ql-formats">
-                        <button class="ql-script" value="sub"></button>
-                        <button class="ql-align" value="center"></button>
-                        <button class="ql-align" value="right"></button>
+    <BlazoredTextEditor @ref="@_quillHtml" Placeholder="公告正文">
+        <ToolbarContent>
+            <select class="ql-header">
+                <option selected=""></option>
+                <option value="1"></option>
+                <option value="2"></option>
+                <option value="3"></option>
+                <option value="4"></option>
+                <option value="5"></option>
+            </select>
+            <span class="ql-formats">
+                <button class="ql-bold"></button>
+                <button class="ql-italic"></button>
+                <button class="ql-underline"></button>
+                <button class="ql-strike"></button>
+            </span>
+            <span class="ql-formats">
+                <select class="ql-color"></select>
+                <select class="ql-background"></select>
+            </span>
+            <span class="ql-formats">
+                <button class="ql-list" value="ordered"></button>
+                <button class="ql-list" value="bullet"></button>
+            </span>
+            <span class="ql-formats">
+                <button class="ql-link"></button>
+            </span>
+            <span class="ql-formats">
+                <button class="ql-script" value="sub"></button>
+                <button class="ql-align" value="center"></button>
+                <button class="ql-align" value="right"></button>
 
-                        <button class="ql-code-block"></button>
-                        <button class="ql-indent" value="+1"></button>
-                    </span>
-                </ToolbarContent>
-            </BlazoredTextEditor>
-
+                <button class="ql-code-block"></button>
+                <button class="ql-indent" value="+1"></button>
+            </span>
+        </ToolbarContent>
+        </BlazoredTextEditor>
+        <FormItem>
+        <Button Type="primary" HtmlType="submit" Style="margin-top:16px">
+            提交
+        </Button>
+        </FormItem>
 </Form>
-@_message
+
 
 
 @code {
     private AddAnnouncement _addAnnouncement = new();
-
-
 
     private BlazoredTextEditor _quillHtml;
     [CascadingParameter]
     private Task<AuthenticationState>? _authenticationState { get; set; }
     private Guid userId;
     private string _message = string.Empty;
-    private List<string> _iconList = new() { "home", "warn", "loading" };
+    private List<string> _iconList = new() { "stop", "warning", "question-circle","carry-out","bug" };
 
     protected override async Task OnParametersSetAsync()
     {
@@ -97,7 +103,12 @@
             var response=   await AnnouncementService.AddAsync(_addAnnouncement);
             if (response.Success)
             {
-                _message = "成功啦";
+                MessageService.Success("成功发布公告!");
+                NavigationManager.NavigateTo("/");
+            }
+            else
+            {
+                MessageService.Error(response.Message);
             }
         }
 

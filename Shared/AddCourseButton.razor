@@ -26,7 +26,7 @@
             </FormItem>
             <FormItem Label="人员添加">
                 <Select Mode="multiple"
-                        Placeholder="Please select"
+                        Placeholder="选择相关用户"
                         TItemValue="string"
                         TItem="string"
                         OnSelectedItemsChanged="OnSelectedItemsChangedHandler"
@@ -52,7 +52,7 @@
 
 @code {
     [Parameter]
-    public Action OnAddSuccess{ get; set; }
+    public Action? OnAddSuccess{ get; set; }
 
     bool visible = false;
 

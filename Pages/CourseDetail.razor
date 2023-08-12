@@ -41,7 +41,7 @@
 			<PropertyColumn Property="a=>a.Title" Title="名称">
 				<p>@context.Title</p>
 			</PropertyColumn>
-			<PropertyColumn Property="a=>a.UpdateTime" Title="发布时间">S
+			<PropertyColumn Property="a=>a.UpdateTime" Title="发布时间">
 				<p>@context.UpdateTime.ToString("yy年MM月dd日")</p>				
 			</PropertyColumn>
 			<PropertyColumn Sortable="true" Property="a=>a.Deadline" Title="截止时间">
@@ -70,6 +70,9 @@
 			<ActionColumn Title="操作">
 				<Button @onclick="()=>ToSubmissionPage(context.CourseId,context.AssignmentId)">
 					<p>修改作业(实现中)</p>
+				</Button>
+				<Button @onclick="()=>ToSubmissionPage(context.CourseId,context.AssignmentId)">
+					<p>批改作业(实现中)</p>
 				</Button>
 			</ActionColumn>
 				

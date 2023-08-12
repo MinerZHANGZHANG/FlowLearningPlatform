@@ -1,7 +1,33 @@
 ﻿@page "/announcement"
+@layout ManagerLayout
+@attribute [Authorize(Roles ="管理员")]
 
-<h3>AnnouncementManager</h3>
+@inject IAnnouncementService AnnouncementService
+@inject NavigationManager NavigationManager
+
+<h3>公告管理(实现中)</h3>
+
+<AntList DataSource="@_announcements" TItem="Announcement">
+    <ListItem Actions="@actions">
+        <ListItemMeta Description="@context.SubTitle">
+            <TitleTemplate>
+                <a href="@($"/announcement/{context.AnnouncementId}")">@context.Title</a>
+            </TitleTemplate>
+        </ListItemMeta>
+    </ListItem>
+</AntList>
 
 @code {
+    private List<Announcement> _announcements = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _announcements = await AnnouncementService.GetAllLatestAsync(0, 10);
+        await base.OnInitializedAsync();
+    }
+
+    public RenderFragment[] actions = new[] { edit, add };
+    static RenderFragment edit = @<a>编辑</a>;
+    static RenderFragment add = @<a>查看</a>;
 
 }

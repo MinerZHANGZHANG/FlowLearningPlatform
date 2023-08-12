@@ -1,4 +1,5 @@
-﻿using FlowLearningPlatform.Models;
+﻿using Azure;
+using FlowLearningPlatform.Models;
 using FlowLearningPlatform.Models.Form;
 using System.Collections.Generic;
 
@@ -13,6 +14,7 @@ namespace FlowLearningPlatform.Services
         Task<ServiceResponse<List<Course>>> GetByUserIdAsync(string UserId);
         Task<ServiceResponse<string>> AddAsync(AddCourse addCourse);
         Task<ServiceResponse<Course>> UpdateAsync(Course updateCourse);
+        Task<bool> DeleteByIdAsync(Guid courseId);
 
     }
 
@@ -73,10 +75,14 @@ namespace FlowLearningPlatform.Services
                 };
 
                 List<UserCourse> userCourses = new();
-                foreach (var userId in addCourse.UsersId)
+                if(addCourse.UsersId != null)
                 {
-                    userCourses.Add(new UserCourse() { UserId = Guid.Parse(userId), CourseId = courseId });
-                }
+					foreach (var userId in addCourse.UsersId)
+					{
+						userCourses.Add(new UserCourse() { UserId = Guid.Parse(userId), CourseId = courseId });
+					}
+				}
+                
                 using(var _context = await _dbContextFactory.CreateDbContextAsync())
                 {
 					await _context.Courses.AddAsync(course);
@@ -251,6 +257,30 @@ namespace FlowLearningPlatform.Services
                 response.Message = "发生错误请联系管理员";
                 return response;
             }
+        }
+
+        public async Task<bool> DeleteByIdAsync(Guid courseId)
+        {
+            bool isSuccess = false;
+            try
+            {
+                using (var context = await _dbContextFactory.CreateDbContextAsync())
+                {
+                    var course =await context.Courses.FindAsync(courseId);
+                    if(course==null) 
+                    {
+                        return isSuccess;
+                    }
+                  context.Courses.Remove(course);
+                  await  context.SaveChangesAsync();
+                }
+                isSuccess = true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+            }
+            return isSuccess;
         }
     }
 }

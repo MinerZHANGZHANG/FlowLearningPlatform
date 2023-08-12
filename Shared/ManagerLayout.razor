@@ -8,20 +8,20 @@
         <Affix OffsetTop="10">
             <AuthorizeView Roles="教师,学生,管理员">
                 <Authorized>
-                    <Menu Theme="MenuTheme.Dark" DefaultSelectedKeys=@(new[]{"1"}) Mode="MenuMode.Inline">
+                    <Menu Theme="MenuTheme.Dark"  Mode="MenuMode.Inline">
                     <MenuItem Key="0">
                         <Icon Type="home" Theme="outline" />
                         <NavLink href="/">返回首页</NavLink>
                     </MenuItem>                   
                     <MenuItem Key="2">
                         <Icon Type="solution" Theme="outline" />
-                        <NavLink href="/course">课程管理</NavLink>
+                        <NavLink Match="NavLinkMatch.Prefix" href="/course">课程管理</NavLink>
                     </MenuItem>
                     @if(context.User.IsInRole("教师")||context.User.IsInRole("管理员"))
                     {
                         <MenuItem Key="1">
                             <Icon Type="notification" Theme="outline" />
-                            <NavLink href="/announcement">公告管理</NavLink>
+                            <NavLink Match="NavLinkMatch.Prefix" href="/announcement">公告管理</NavLink>
                         </MenuItem>
                         if(context.User.IsInRole("管理员"))
                         {
@@ -37,7 +37,7 @@
                             </SubMenu>
                             <MenuItem Key="2">
                                     <Icon Type="setting" Theme="outline" />
-                                <NavLink href="/course">网站配置</NavLink>
+                                <NavLink href="/config">网站配置</NavLink>
                             </MenuItem>
                         }                           
                     }                                       

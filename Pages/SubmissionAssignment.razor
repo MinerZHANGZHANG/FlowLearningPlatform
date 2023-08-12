@@ -1,5 +1,7 @@
-﻿@page "/course/{CourseId:guid}/submission/{AssignmentId:guid}"
+﻿@attribute [Authorize(Roles = "学生")]
+@page "/course/{CourseId:guid}/submission/{AssignmentId:guid}"
 @layout ManagerLayout
+
 @using Blazored.TextEditor
 
 @inject IJSRuntime Js;
@@ -29,9 +31,7 @@
     
 </Descriptions>
 <Divider></Divider>
-<Text>
-    文本输入
-</Text>
+<Text Strong Style="margin-bottom:16px">文本输入</Text>
 <BlazoredTextEditor @ref="@_quillHtml" Placeholder="输入文本信息">
     <ToolbarContent>
         <select class="ql-header">
@@ -70,15 +70,17 @@
     </ToolbarContent>
 </BlazoredTextEditor>
 <Divider></Divider>
-<Text>文件提交</Text>
-<InputFile id="fileInput" OnChange="UploadFiles" hidden multiple />
+<Text Strong Style="margin-bottom:16px">文件提交</Text>
+<div>
+    <InputFile id="fileInput" OnChange="UploadFiles" hidden multiple />
+    <Upload Name="files" FileList="fileList">
+        <label class="ant-btn" for="fileInput">
+            <Icon Type="upload" />
+            点击上传文件
+        </label>
+    </Upload>
+</div>
 
-<Upload Name="files" FileList="fileList">
-    <label class="ant-btn" for="fileInput">
-        <Icon Type="upload" />
-        Click to Upload
-    </label>
-</Upload>
 
 <Divider></Divider>
 <Button OnClick="@FinishAssignment">提交作业</Button>
