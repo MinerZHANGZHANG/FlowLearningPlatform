@@ -87,7 +87,7 @@
 		_announcement= await AnnouncementService.GetByIdAsync(AnnouncementId);
 		if (_announcement != null)
 		{
-			_authorAnnouncements = await AnnouncementService.GetByAuthorId(_announcement.AnnouncementId);
+			_authorAnnouncements = await AnnouncementService.GetByAuthorId(_announcement.UserId);
 		}
 		_latestAnnouncements = await AnnouncementService.GetAllLatestAsync(0, 10);
 

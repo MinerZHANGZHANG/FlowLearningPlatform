@@ -52,7 +52,7 @@ namespace FlowLearningPlatform.Data
                 .HasForeignKey(f => f.DepartmentTypeId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<Course>()
+			modelBuilder.Entity<Course>()
                 .HasMany(e => e.Users)
                 .WithMany(e => e.Courses)
                 .UsingEntity<UserCourse>();

@@ -15,6 +15,7 @@ namespace FlowLearningPlatform.Models
 
         [Column(TypeName = "decimal(6, 3)")]
         public decimal Score { get; set; }
+        public bool IsGrade { get; set; }=false;
 
         [ForeignKey(nameof(Assignment))]
         public Guid AssignmentId { get; set; }// rename

@@ -4,6 +4,7 @@
 @inject ICourseService CourseService
 @inject NavigationManager NavigationManager
 @inject IAssignmentService AssignmentService
+@inject IMessageService MessageService
 @using AntDesign.TableModels
 
 <PageTitle>课程信息</PageTitle>
@@ -68,15 +69,31 @@
 				<p>@context.SubmissionCount / @_studentCount</p>
 			</PropertyColumn>
 			<ActionColumn Title="操作">
-				<Button @onclick="()=>ToSubmissionPage(context.CourseId,context.AssignmentId)">
-					<p>修改作业(实现中)</p>
+				<Button @onclick="()=>OpenDeleteConfirmModal(context.AssignmentId)">
+					<p>删除</p>
 				</Button>
-				<Button @onclick="()=>ToSubmissionPage(context.CourseId,context.AssignmentId)">
-					<p>批改作业(实现中)</p>
+				<Button @onclick="()=>ToEditPage(context.CourseId,context.AssignmentId)">
+					<p>修改</p>
+				</Button>
+				<Button @onclick="()=>ToGardePage(context.CourseId,context.AssignmentId)">
+					<p>批改</p>
 				</Button>
 			</ActionColumn>
 				
 		</Table>
+		<Modal Title="确定删除"
+			   Visible="@_modalVisible"
+			   OnOk="@HandleModalOk"
+			   OnCancel="()=>_modalVisible=false">
+			@if (_selectAssignment != null)
+			{
+				<Alert Type="@AlertType.Warning"
+					Message="@($"你真的要删除 {_selectAssignment.Title} 吗?")"
+					Description="作业将会永久失去，相关信息将会被清空"
+					ShowIcon="true"
+					Closable />
+			}
+		</Modal>
 	</Authorized>		
 </AuthorizeView>
 
@@ -153,10 +170,17 @@
 			_course = courseResponse.Data;
 		}
 
+		await UpdateAssignmentsAsync();
+
+		await base.OnParametersSetAsync();
+	}
+
+	private async Task UpdateAssignmentsAsync()
+	{
 		var state = await _authenticationState;
-		var claim= state.User.FindFirst(ClaimTypes.NameIdentifier);
+		var claim = state.User.FindFirst(ClaimTypes.NameIdentifier);
 		var role = state.User.FindFirst(ClaimTypes.Role);
-		if (claim!=null&& Guid.TryParse(claim.Value,out Guid temp))
+		if (claim != null && role != null && Guid.TryParse(claim.Value, out Guid temp))
 		{
 			_userId = temp;
 
@@ -177,10 +201,7 @@
 				}
 				_studentCount = await CourseService.GetUserCount(_courseId);
 			}
-
 		}
-
-		await base.OnParametersSetAsync();
 	}
 
 	private	void OnStudentRowClick(RowData<StudentAssignmentState> row)
@@ -198,9 +219,19 @@
 		NavigationManager.NavigateTo($"/course/{courseId}/publish");
 	}
 
+	private void ToEditPage(Guid courseId,Guid assignmentId)
+	{
+		NavigationManager.NavigateTo($"/course/{courseId}/edit/{assignmentId}");
+	}
+
 	private void ToSubmissionPage(Guid courseId,Guid assignmentId)
 	{
 		NavigationManager.NavigateTo($"/course/{courseId}/submission/{assignmentId}");
+	}
+		
+	private void ToGardePage(Guid courseId,Guid assignmentId)
+	{
+		NavigationManager.NavigateTo($"/course/{courseId}/grade/{assignmentId}");
 	}
 
 	private Dictionary<string, int> column = new Dictionary<string, int> 
@@ -212,4 +243,42 @@
 			{ "sm", 1},
 			{ "xs", 1}
 	};
+
+	#region -删除作业-
+	private bool _modalVisible = false;
+	private Assignment _selectAssignment;
+	private async void OpenDeleteConfirmModal(Guid assignmentId)
+	{
+		var response= await AssignmentService.GetByIdAsync(assignmentId);
+		if (response.Success && response.Data!=null)
+		{
+			_selectAssignment = response.Data;
+			_modalVisible = true;
+		}
+		else
+		{
+			await MessageService.Error($"获取该作业失败:{response.Message}");
+		}
+
+	}
+	private async void HandleModalOk()
+	{
+		if (_selectAssignment != null)
+		{
+			var response = await AssignmentService.DeleteAssignment(_selectAssignment.AssignmentId);
+			if (response.Success)
+			{			
+				await UpdateAssignmentsAsync();
+				MessageService.Success("已完成删除操作");
+			}
+			else
+			{
+				MessageService.Error($"删除失败:{response.Message}");
+			}
+		}
+		
+		_modalVisible = false;
+		StateHasChanged();
+	}
+	#endregion
 }

@@ -1,8 +1,13 @@
-﻿namespace FlowLearningPlatform.Services
+﻿using Azure;
+using FlowLearningPlatform.Models.Form;
+using FlowLearningPlatform.Models;
+
+namespace FlowLearningPlatform.Services
 {
     public interface IFileService 
     {
         public Task<ServiceResponse<FileSet>> UploadFilesAsync(UploadFile uploadFile);
+        public Task<FileSet?> GetFileSetById(Guid fileSetId);
     }
 
     public class FileService:IFileService
@@ -14,6 +19,26 @@
         {
             _logger = logger;
             _dbContextFactory = dbContextFactory;
+        }
+
+        public async Task<FileSet?> GetFileSetById(Guid fileSetId)
+        {
+            using (var context = await _dbContextFactory.CreateDbContextAsync())
+            {
+                var fileSets = await context.FileSets
+                      .AsNoTracking()
+                      .Include(f => f.Files)
+                      .Where(f => f.FileSetId == fileSetId)
+                      .ToListAsync();
+                if (fileSets.Any())
+                {
+                    return fileSets.First();
+                }
+                else
+                {
+                    return null;
+                }
+            }
         }
 
         public async Task<ServiceResponse<FileSet>> UploadFilesAsync(UploadFile uploadFile)

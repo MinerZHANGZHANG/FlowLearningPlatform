@@ -13,12 +13,16 @@ namespace FlowLearningPlatform.Models
 
         public string Title { get; set; }
         public string Description { get; set; }
-        public DateTime UpdateTime { get; set; }//StartTime
+        public DateTime StartTime { get; set; }
         public DateTime Deadline { get; set; }
 
         [ForeignKey(nameof(Course))]
         public Guid CourseId { get; set; }
         public Course Course { get; set; }
+
+        public Guid? TeacherId { get; set; }= Guid.Empty;
+        public User? Teacher { get; set; }
+
 
         [ForeignKey(nameof(FileSet))]
         public Guid? FileSetId { get; set; }

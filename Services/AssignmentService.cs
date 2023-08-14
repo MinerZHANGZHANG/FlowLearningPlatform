@@ -14,7 +14,7 @@ namespace FlowLearningPlatform.Services
 
 
 		// 对作业进行增删改
-        public Task<ServiceResponse<Assignment>> AddAssignment(PublishHomework publishHomework);
+        public Task<ServiceResponse<Assignment>> AddAssignment(AddAssignment publishHomework);
 		public Task<ServiceResponse<Assignment>> UpdateAssignment(Assignment assignment);
 		public Task<ServiceResponse<bool>> DeleteAssignment(Guid assignmentId);
 	}
@@ -30,7 +30,7 @@ namespace FlowLearningPlatform.Services
             _logger = logger;
         }
 
-        public async Task<ServiceResponse<Assignment>> AddAssignment(PublishHomework publishHomework)
+        public async Task<ServiceResponse<Assignment>> AddAssignment(AddAssignment publishHomework)
         {
 			ServiceResponse<Assignment> response = new() { Success = false};
 			try
@@ -43,10 +43,11 @@ namespace FlowLearningPlatform.Services
 
                         Title = publishHomework.Title,
                         Description = publishHomework.Description,
-                        UpdateTime = publishHomework.StartTime,
+                        StartTime = publishHomework.StartTime,
                         Deadline = publishHomework.DeadLine,
 
                         CourseId = publishHomework.CourseId,
+						TeacherId=publishHomework.TeacherId,
 
                         FileSetId = publishHomework.FileSetId,
 
@@ -235,7 +236,7 @@ namespace FlowLearningPlatform.Services
 								CourseId = assignment.CourseId,
 								Title = assignment.Title,
 								Description = assignment.Description,
-								UpdateTime = assignment.UpdateTime,
+								UpdateTime = assignment.StartTime,
 								Deadline = assignment.Deadline,
 
 								HasFileSet = assignment.FileSetId!=null,
@@ -298,7 +299,7 @@ namespace FlowLearningPlatform.Services
 								CourseId = assignment.CourseId,
 								Title = assignment.Title,
 								Description = assignment.Description,
-								UpdateTime = assignment.UpdateTime,
+								UpdateTime = assignment.StartTime,
 								Deadline = assignment.Deadline,
 
 								HasFileSet = assignment.FileSetId != null,
@@ -337,7 +338,24 @@ namespace FlowLearningPlatform.Services
             {
                 using (var context = await _dbContextFactory.CreateDbContextAsync())
                 {
-					// TODO update
+					var old =await context.Assignments.FindAsync(assignment.AssignmentId);
+					if(old != null)
+					{
+						old.Title=assignment.Title;
+						old.Description=assignment.Description;
+						old.StartTime = assignment.StartTime;
+						old.Deadline=assignment.Deadline;
+						old.FileSetId = assignment.FileSetId;
+						
+						old.AutoRename= assignment.AutoRename;
+						old.FileSizeLimit=assignment.FileSizeLimit;
+						old.FileTypeLimit=assignment.FileTypeLimit;
+
+						await context.SaveChangesAsync();
+
+						response.Success = true;
+						response.Data = old;
+					}
                 }
             }
             catch (Exception ex)

@@ -6,7 +6,7 @@ namespace FlowLearningPlatform.Models.Form
     /// <summary>
     /// 发布作业的表单
     /// </summary>
-    public class PublishHomework
+    public class AddAssignment
     {
         [Required(ErrorMessage = "作业标题不能为空")]
         public string Title { get; set; }
@@ -19,6 +19,7 @@ namespace FlowLearningPlatform.Models.Form
 
         public bool AutoRename { get; set; }
         public Guid? FileSetId { get; set; }
+        public Guid? TeacherId { get; set; }= Guid.Empty;
 
         //public List<AssignmentDivision> AssignmentDivisions { get; set; }
         public double FileSizeLimit { get; set; } = 50 * 1024 * 1024;

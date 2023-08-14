@@ -1,5 +1,4 @@
-﻿@attribute [Authorize(Roles = "学生")]
-@page "/course/{CourseId:guid}/submission/{AssignmentId:guid}"
+﻿@page "/course/{CourseId:guid}/submission/{AssignmentId:guid}"
 @layout ManagerLayout
 
 @using Blazored.TextEditor
@@ -147,11 +146,12 @@
         foreach (var file in files)
         {
             var fileName = file.Name;
+            var fileSuffix = file.Name.Split(".").Last();
             string path="";
             byte[] fileContent =new byte[]{ };
             if (_assignment.AutoRename)
             {
-                fileName = $"{_course.Name}-{_assignment.Title}-{_authenticationState.Result.User.FindFirst(System.Security.Claims.ClaimTypes.Name).Value}";
+                fileName = $"{_course.Name}-{_assignment.Title}-{_authenticationState.Result.User.FindFirst(System.Security.Claims.ClaimTypes.Name).Value}.{fileSuffix}";
             }
 
             //文件形式存入

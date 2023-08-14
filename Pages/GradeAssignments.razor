@@ -1,0 +1,223 @@
+﻿@page "/course/{courseId:guid}/grade/{assignmentId:guid}"
+@using AntDesign.TableModels;
+@layout ManagerLayout
+@inject IWebHostEnvironment Environment
+
+@inject ICourseService CourseService
+@inject IAssignmentService AssignmentService
+@inject ISubmissionService SubmissionService
+@inject IMessageService MessageService
+@inject IJSRuntime Js;
+@inject IFileService FileService;
+
+<PageTitle>作业批改</PageTitle>
+
+<AuthorizeView Roles="教师" Context="authorContext">
+    <Authorized>
+        @if (Guid.TryParse(authorContext.User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId))
+        {
+            if (userId == _assignment.TeacherId)
+            {
+                <GridRow Gutter="16">
+                    <GridCol Span="6">
+                        <h4>作业列表</h4>
+                        <Table DataSource="@_submissions" TItem="Submission" OnRowClick="@OnRowClick">                           
+                            <PropertyColumn Title="得分" Property="s=>s.Score" Sortable>
+                                @if (context.IsGrade)
+                                {
+                                    @context.Score
+                                }
+                            </PropertyColumn>
+                            <PropertyColumn Title="姓名" Property="s=>s.Student.Name" Sortable>
+                                @context.Student.Name
+                            </PropertyColumn>
+                            <PropertyColumn Title="学号" Property="s=>s.Student.StudentNumber" Sortable>
+                               <Tooltip Title="@context.Student.StudentNumber" >
+                                   @*为节约空间默认只显示学号后四位*@
+                                   @context.Student.StudentNumber.Substring(7,4)
+                               </Tooltip>
+                            </PropertyColumn>
+                        </Table>
+                    </GridCol>
+                    <GridCol/>
+                    <GridCol Span="16">
+                        @if(_selectSubmission!=null)
+                        {
+                            <div>
+                                <Descriptions Title="提交信息" Bordered>
+                                <DescriptionsItem Title="课程名称">@_course.Name</DescriptionsItem>
+                                <DescriptionsItem Title="作业名称">@_assignment.Title</DescriptionsItem>
+                                <DescriptionsItem Title="学生姓名">@_selectSubmission.Student.Name</DescriptionsItem>
+                                <DescriptionsItem Title="学生学号">@_selectSubmission.Student.StudentNumber</DescriptionsItem>
+                                <DescriptionsItem Title="提交时间">@_selectSubmission.SubmissionTime.ToString("yyyy-MM-dd HH:mm")</DescriptionsItem>
+                                <DescriptionsItem Title="提交次数">@_selectSubmission.SubmissionCount</DescriptionsItem>
+                                </Descriptions>
+                            </div>
+                            <div >
+                                <h2>提交正文</h2>
+                                @((MarkupString)_selectSubmission.RichText)
+
+                                @if (_selectSubmission.FileSetId!=null&&_selectSubmission.FileSetId != Guid.Empty)
+                                {
+                                    <Button OnClick="@(async ()=>await DownloadFileSet(_selectSubmission.FileSetId.Value))" Type="primary">
+                                       下载附件
+                                    </Button>
+                                }
+                                else
+                                {
+                                    <p>（该提交不包含附件）</p>
+                                }
+
+                            </div>
+                            <div>
+                               <AntDesign.InputNumber @bind-Value="_score" Min="0" Max="100" PlaceHolder="请输入评分"/>
+                                <Button OnClick="@FinishGrade" Type="primary">确认评分</Button>
+                            </div>
+                        }
+                        else
+                        {
+                            <Empty>请选择一个作业查看</Empty>
+                        }
+                       
+                    </GridCol>
+                </GridRow>
+            }
+            else
+            {
+                <p>抱歉，您无法批改不是自己发布的作业</p>
+            }
+        }
+
+    </Authorized>
+    <NotAuthorized>
+        <p>抱歉，您没有访问这个页面的权限</p>
+    </NotAuthorized>
+</AuthorizeView>
+
+
+@code {
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? _authenticationState { get; set; }
+
+    [Parameter]
+    public Guid CourseId { get; set; }
+    private Models.Course _course { get; set; } = new();
+
+    [Parameter]
+    public Guid AssignmentId { get; set; }
+    private Assignment _assignment { get; set; } = new();
+
+    private List<Submission> _submissions { get; set; } = new();
+    private Submission? _selectSubmission { get; set; }
+    private double _score { get; set; } = 0;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var courseResponse = await CourseService.GetByIdAsync(CourseId);
+        if (courseResponse.Success)
+        {
+            _course = courseResponse.Data ?? new();
+        }
+
+        var assignmentResponse = await AssignmentService.GetByIdAsync(AssignmentId);
+        if (assignmentResponse.Success)
+        {
+            _assignment = assignmentResponse.Data ?? new();
+        }
+
+        var submissionResponse = await SubmissionService.GetByAssignmentIdAsync(AssignmentId);
+        if (submissionResponse.Success)
+        {
+            _submissions = submissionResponse.Data??new();
+        }
+
+        if (_submissions.Count > 0)
+        {
+            _selectSubmission = _submissions.First();
+        }
+
+        await base.OnParametersSetAsync();
+    }
+
+
+    void OnRowClick(RowData<Submission> row)
+    {
+        _selectSubmission = row.Data;
+        _score = 0;
+    }
+
+    async void FinishGrade()
+    {
+        if (_selectSubmission != null)
+        {
+            var response= await SubmissionService.GradeSubmissionAsync(_selectSubmission.SubmissionId, _score);
+            if (response.Success && response.Data != null)
+            {
+                response.Data.Student = _selectSubmission.Student;
+                _selectSubmission = response.Data;   
+                NextAssignment();
+            }
+            else
+            {
+                await MessageService.Error($"提交分数发生错误:{response.Message}");
+            }
+
+        }        
+    }
+
+    void NextAssignment()
+    {
+        var submission = _submissions.Where(s => !s.IsGrade);
+        if (submission.Count() == 0)
+        {
+            MessageService.Success($"您已经批改了当前作业下的所有提交(共{_submissions.Count}份)！");
+        }
+        else
+        {
+            MessageService.Success("成功设置分数");
+            _selectSubmission = submission.First();
+            _score = 0;
+        }
+        StateHasChanged();
+    }
+
+    private async Task DownloadFileSet(Guid fileSetId)
+    {
+        var fileSet= await FileService.GetFileSetById(fileSetId);
+        if (fileSet != null)
+        {
+            foreach (var fileData in fileSet.Files)
+            {
+                if (fileData.FilePath != null)
+                {
+                    await DownloadFileFromStream(fileData.FilePath, fileData.Name);
+                }
+                
+            }
+        }
+        else
+        {
+            await MessageService.Error("下载文件出现问题");
+        }
+        
+    }
+
+    private async Task DownloadFileFromStream(string path,string fileName)
+    {
+        if (File.Exists(path))
+        {
+            var fileStream = File.OpenRead(@$"{path}");
+
+            using var streamRef = new DotNetStreamReference(stream: fileStream);
+
+            await Js.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
+        }
+        else
+        {
+          await  MessageService.Error("不存在的文件");
+        }
+
+    }
+
+}

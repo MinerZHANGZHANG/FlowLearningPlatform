@@ -1,0 +1,166 @@
+﻿@page "/course/{courseId:guid}/edit/{assignmentId:guid}"
+@layout ManagerLayout
+
+@inject ICourseService CourseService
+@inject IAssignmentService AssignmentService
+@inject IMessageService MessageService
+
+<PageTitle>作业修改</PageTitle>
+
+<AuthorizeView Roles="教师" Context="authorContext">
+    <Authorized>
+        @if (Guid.TryParse(authorContext.User.FindFirstValue(ClaimTypes.NameIdentifier),out Guid userId))
+        {
+            if (userId == _assignment.TeacherId)
+            {                
+                <Form Model="@_addAssignment"
+                      LabelColSpan="8"
+                      WrapperColSpan="16"
+                      OnFinish="OnFinish"
+                      OnFinishFailed="OnFinishFailed"
+                      Size="Default">
+                    <FormItem Label="主题">
+                        <Input @bind-Value="@context.Title" />
+                    </FormItem>
+                    <FormItem Label="描述">
+                        <TextArea @bind-Value="@context.Description" />
+                    </FormItem>
+                    <FormItem Label="课程">
+                        <Text>@_course.Name</Text>
+                    </FormItem>
+
+                    <FormItem Label="立即发布">
+                        <Switch @bind-Value="@_publishImmediaty" />
+                    </FormItem>
+                    @if (_publishImmediaty)
+                    {
+                        <FormItem Label="截止日期">
+                            <DatePicker @bind-Value="@context.DeadLine" />
+                        </FormItem>
+                    }
+                    else
+                    {
+                        <FormItem Label="起止日期">
+                            <RangePicker @bind-Value="@context.TimeRange" />
+                        </FormItem>
+                    }
+
+                    <FormItem Label="文件自动重命名">
+                        <Tooltip Placement="@Placement.TopLeft" Title="按照 课程-作业名称-学生姓名-学号 的格式">
+                            <Switch @bind-Value="@context.AutoRename" />
+                        </Tooltip>
+                    </FormItem>
+
+                   @*  以下功能实现中*@
+                    <FormItem Label="文件提交限制">
+                        <Switch @bind-Value="@_isFileLimited" />
+                    </FormItem>
+                    @if (_isFileLimited)
+                    {
+                        <div>
+                            <EnumSelect @bind-Value="context.FileTypeLimit" TEnum="FileType" />
+                            <Slider TValue="double" Min="1" Max="100" @bind-Value="context.FileSizeLimit" />
+                            <AntDesign.InputNumber Min="1" Max="100" Style="margin:0 16px;" @bind-Value="context.FileSizeLimit" TValue="double" />
+                        </div>
+                    }
+                    <hr>
+                    <Text>附件</Text>
+
+                    <Switch @bind-Value="@_isResetSubmissions">是否重置该作业的提交</Switch>
+
+                    <FormItem WrapperColOffset="8" WrapperColSpan="16">
+                        <Button HtmlType="submit">
+                            完成修改
+                        </Button>
+                    </FormItem>
+                </Form>
+            }
+            else
+            {
+                <p>抱歉，您无法修改不是自己发布的作业</p>
+            }
+        }
+        
+    </Authorized>
+    <NotAuthorized>
+        <p>抱歉，您没有访问这个页面的权限</p>
+    </NotAuthorized>
+</AuthorizeView>
+
+
+@code {
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? _authenticationState { get; set; }
+
+    [Parameter]
+    public Guid CourseId { get; set; }    
+    private Models.Course _course { get; set; } = new();
+
+    [Parameter]
+    public Guid AssignmentId { get; set; }
+    private Assignment _assignment { get; set; } = new();
+
+
+    private AddAssignment _addAssignment { get; set; } = new();
+
+    private bool _publishImmediaty = true;
+    private bool _isFileLimited = true;
+    private bool _isResetSubmissions=false;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var courseResponse = await CourseService.GetByIdAsync(CourseId);
+        if (courseResponse.Success)
+        {
+            _course = courseResponse.Data ?? new();
+        }
+
+        var assignmentResponse = await AssignmentService.GetByIdAsync(AssignmentId);
+        if (assignmentResponse.Success)
+        {
+            _assignment = assignmentResponse.Data ?? new();
+        }
+
+        _addAssignment.Title = _assignment.Title;
+        _addAssignment.Description = _assignment.Description;
+        _addAssignment.StartTime = _assignment.StartTime;
+        _addAssignment.DeadLine = _assignment.Deadline;
+        _addAssignment.AutoRename = _assignment.AutoRename;
+        _addAssignment.FileSizeLimit = _assignment.FileSizeLimit;
+        _addAssignment.FileTypeLimit = _assignment.FileTypeLimit;
+
+        await base.OnParametersSetAsync();
+    }
+
+    private async void OnFinish(EditContext editContext)
+    {
+        _addAssignment.CourseId = CourseId;
+        _addAssignment.FileSetId = null;
+        _addAssignment.DeadLine = _addAssignment.DeadLine.AddDays(1).Date;
+
+        _assignment.Title = _addAssignment.Title;
+        _assignment.Description = _addAssignment.Description;
+        _assignment.StartTime = _addAssignment.StartTime;
+        _assignment.Deadline = _addAssignment.DeadLine;
+        _assignment.AutoRename = _addAssignment.AutoRename;
+        _assignment.FileSizeLimit = _addAssignment.FileSizeLimit;
+        _assignment.FileTypeLimit = _addAssignment.FileTypeLimit;
+
+        var response = await AssignmentService.UpdateAssignment(_assignment);
+        if (response.Success)
+        {
+            await MessageService.Success("修改作业成功");
+        }
+        else
+        {
+            await MessageService.Error($"修改作业失败:{response.Message}，请联系管理员");
+        }
+    }
+    private void OnFinishFailed(EditContext editContext)
+    {
+
+    }
+
+   
+}

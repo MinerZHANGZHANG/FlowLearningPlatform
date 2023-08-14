@@ -8,7 +8,7 @@
 
 <PageTitle>作业发布</PageTitle>
 
-<Form Model="@PublicHomework"
+<Form Model="@_addAssignment"
       LabelColSpan="8"
       WrapperColSpan="16"
       OnFinish="OnFinish"
@@ -53,14 +53,14 @@
     @if (_isFileLimited)
     {
         <div>
-            <EnumSelect @bind-Value="context.FileTypeLimit" TEnum="FileType" />
+            <EnumSelect Placeholder="选择文件类型" @bind-Value="context.FileTypeLimit" TEnum="FileType" />
             <Slider TValue="double" Min="1" Max="100" @bind-Value="context.FileSizeLimit" />
             <AntDesign.InputNumber Min="1" Max="100" Style="margin:0 16px;" @bind-Value="context.FileSizeLimit" TValue="double" />
         </div>       
     }
     <hr>
     <Text>附件</Text>  
-    <Upload Action="https://www.mocky.io/v2/5cc8019d300000980a055e76"
+  @*  <Upload Action="https://www.mocky.io/v2/5cc8019d300000980a055e76"
             Name="files"
             Drag
             Multiple
@@ -72,7 +72,7 @@
         <p class="ant-upload-hint">
             主流浏览器和IE10+支持一次上传多个文件
         </p>
-    </Upload>
+    </Upload>*@
 
     <FormItem WrapperColOffset="8" WrapperColSpan="16">
         <Button HtmlType="submit">
@@ -133,7 +133,7 @@
     public Guid CourseId { get; set; }
     private Models.Course _course { get; set; } = new();
 
-    public PublishHomework PublicHomework{ get; set; } =new();
+    private AddAssignment _addAssignment{ get; set; } =new();
     public AddAssignmentDivision AddWorkPart { get; set; } = new();
     public List<AddAssignmentDivision> AddWorkParts { get; set; } = new() { new() };
     private bool _publishImmediaty = true;
@@ -152,15 +152,23 @@
 
     private async void OnFinish(EditContext editContext)
     {
-        PublicHomework.CourseId = CourseId;
-        PublicHomework.FileSetId = null;
+        if (_authenticationState != null)
+        {
+            var state = await _authenticationState;
+            var user = state.User;
+            _addAssignment.TeacherId =Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier));
+        }
+        
+        _addAssignment.CourseId = CourseId;
+        _addAssignment.FileSetId = null;
         // 默认截止时间为当天的24:00
-        PublicHomework.DeadLine = PublicHomework.DeadLine.AddDays(1).Date;
+        _addAssignment.DeadLine = _addAssignment.DeadLine.AddDays(1).Date;
 
-        var response= await AssignmentService.AddAssignment(PublicHomework);
+        var response= await AssignmentService.AddAssignment(_addAssignment);
         if (response.Success)
         {
             await MessageService.Success("添加作业成功");
+            //NavigationManager.
         }
         else
         {

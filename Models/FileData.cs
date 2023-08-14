@@ -20,8 +20,8 @@ namespace FlowLearningPlatform.Models
         public FileSet FileSet { get; set; }
 
         public StorageType StorageType { get; set; }     
-        public string? FilePath { get; set; }
-        public string? Md5 { get; set; }
+        public string? FilePath { get; set; } // 改成不可为空
+        public string? Md5 { get; set; } // TODO
         
     }
     public enum StorageType
