@@ -9,7 +9,7 @@ namespace FlowLearningPlatform.Services
     {
         Task<int> GetCount();
         Task<int> GetUserCount(Guid courseId, bool onlyStudent = true);
-        Task<List<Course>> GetAllAsync(int pageIndex,int pageCount);
+        Task<List<Course>> GetAllAsync(int pageIndex,int pageSize);
         Task<ServiceResponse<Course>> GetByIdAsync(Guid courseId);
         Task<ServiceResponse<List<Course>>> GetByUserIdAsync(string UserId);
         Task<ServiceResponse<string>> AddAsync(AddCourse addCourse);

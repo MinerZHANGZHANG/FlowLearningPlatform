@@ -6,6 +6,9 @@
 @inject IMessageService MessageService
 @inject NavigationManager NavigationManager
 
+@implements IDisposable
+@inject ILocalStorageService LocalStorageService
+
 @using Blazored.TextEditor
 
 <Form Model="@_addAnnouncement"
@@ -85,9 +88,15 @@
     private string _message = string.Empty;
     private List<string> _iconList = new() { "stop", "warning", "question-circle","carry-out","bug" };
 
-    protected override async Task OnParametersSetAsync()
+    protected override async void OnAfterRender(bool firstRender)
     {
-        await base.OnParametersSetAsync();
+        if (firstRender)
+        {
+            await LoadCache();
+            registration =
+                NavigationManager.RegisterLocationChangingHandler(OnLocationChanging);
+        }
+        base.OnAfterRender(firstRender);
     }
 
     private async void OnFinish(EditContext editContext)
@@ -103,6 +112,7 @@
             var response=   await AnnouncementService.AddAsync(_addAnnouncement);
             if (response.Success)
             {
+                await ClearCache();
                 MessageService.Success("成功发布公告!");
                 NavigationManager.NavigateTo("/");
             }
@@ -110,8 +120,42 @@
             {
                 MessageService.Error(response.Message);
             }
-        }
-
-        
+        }       
     }
+
+    private IDisposable? registration;
+
+    private async ValueTask OnLocationChanging(LocationChangingContext context)
+    {
+        await WriteCache();       
+        // context.PreventNavigation();
+    }
+
+    private const string CACHEKEY = "AnnouncementCache";
+    async Task LoadCache()
+    {
+        string cache = await LocalStorageService.GetItemAsStringAsync(CACHEKEY);
+        if (!string.IsNullOrEmpty(cache))
+        {
+            await _quillHtml.LoadHTMLContent(cache);
+            MessageService.Info("已加载上一次的编辑内容");
+        }
+    }
+
+    async Task WriteCache()
+    {
+        string cache = await _quillHtml.GetHTML();
+        if (!string.IsNullOrEmpty(cache))
+        {
+            await LocalStorageService.SetItemAsStringAsync(CACHEKEY, cache);
+            MessageService.Info("编辑内容尚未提交，已保存");
+        }       
+    }
+
+    async Task ClearCache()
+    {
+        await LocalStorageService.RemoveItemAsync(CACHEKEY);
+    }
+
+    public void Dispose() => registration?.Dispose();
 }

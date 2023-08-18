@@ -1,6 +1,7 @@
 ﻿using Azure;
 using FlowLearningPlatform.Models.Form;
 using FlowLearningPlatform.Models;
+using System.Formats.Tar;
 
 namespace FlowLearningPlatform.Services
 {
@@ -8,6 +9,7 @@ namespace FlowLearningPlatform.Services
     {
         public Task<ServiceResponse<FileSet>> UploadFilesAsync(UploadFile uploadFile);
         public Task<FileSet?> GetFileSetById(Guid fileSetId);
+        public Task GetTarFileSetById(Guid fileSetId,Stream stream);
     }
 
     public class FileService:IFileService
@@ -40,6 +42,24 @@ namespace FlowLearningPlatform.Services
                 }
             }
         }
+
+        public async Task GetTarFileSetById(Guid fileSetId,Stream stream)
+        {
+            // TODO
+            using (var context = await _dbContextFactory.CreateDbContextAsync())
+            {
+                var fileSets = await context.FileSets
+                      .AsNoTracking()
+                      .Include(f => f.Files)
+                      .Where(f => f.FileSetId == fileSetId)
+                      .ToListAsync();
+                if (fileSets.Any())
+                {
+                    TarFile.CreateFromDirectory(sourceDirectoryName:fileSets.First().Files.First().FilePath, destination: stream, includeBaseDirectory: true);
+                }
+            }
+        }
+            
 
         public async Task<ServiceResponse<FileSet>> UploadFilesAsync(UploadFile uploadFile)
         {

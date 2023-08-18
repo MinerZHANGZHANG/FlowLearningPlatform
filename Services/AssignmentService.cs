@@ -221,6 +221,7 @@ namespace FlowLearningPlatform.Services
 						{
 							var submission = await context.Submissions
 								.AsNoTracking()
+								.OrderByDescending(s=>s.SubmissionTime)
 								.FirstOrDefaultAsync(s => s.AssignmentId == assignment.AssignmentId && s.StudentId == studentId);
 							int submissionCount = 0;
 							Guid submissionGuid = Guid.Empty;

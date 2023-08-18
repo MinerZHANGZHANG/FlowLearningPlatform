@@ -56,17 +56,26 @@ namespace FlowLearningPlatform.Services
 
         public async Task<List<Announcement>> GetAllLatestAsync(int pageIndex, int pageSize)
         {
+            
             List<Announcement> result = new();
             using (var context = await _dbContextFactory.CreateDbContextAsync())
             {
+                //// 使用Linq
+                //result.AddRange(
+                //    await context.Announcements
+                //    .AsNoTracking()
+                //    .OrderByDescending(a => a.UpdateTime)
+                //    .Skip(pageIndex * pageSize)
+                //    .Take(pageSize)
+                //    .ToListAsync());
+                // 使用设置好的存储过程
                 result.AddRange(
                     await context.Announcements
-                    .AsNoTracking()
-                    .OrderByDescending(a => a.UpdateTime)
-                    .Skip(pageIndex * pageSize)
-                    .Take(pageSize)
+                    .FromSql($"GetAnnouncements {pageIndex},{pageSize}")
                     .ToListAsync());
             }
+
+
             return result;
         }
 
