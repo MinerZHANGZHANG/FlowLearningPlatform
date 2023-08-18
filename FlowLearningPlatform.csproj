@@ -11,9 +11,13 @@
 
   <ItemGroup>
     <Compile Remove="FlowLearningPlatform.Test\**" />
+    <Compile Remove="Resources\**" />
     <Content Remove="FlowLearningPlatform.Test\**" />
+    <Content Remove="Resources\**" />
     <EmbeddedResource Remove="FlowLearningPlatform.Test\**" />
+    <EmbeddedResource Remove="Resources\**" />
     <None Remove="FlowLearningPlatform.Test\**" />
+    <None Remove="Resources\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -33,7 +37,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Resources\" />
     <Folder Include="wwwroot\js\" />
   </ItemGroup>
 
