@@ -46,3 +46,9 @@ FlowLearningPlatform是一个使用BlazorServer框架，开发中的学习平台
 - [ ] 添加配置页面
 - [ ] 创建docker部署版本
 - [ ] 使用SignalR开发实时聊天功能
+
+#### 感谢
+
+- UI框架 [AntDesignBlazor](https://antblazor.com/)
+- 富文本编辑 [Blazored.TextEditor](https://github.com/Blazored/TextEditor)
+- 单元测试框架 [NUnit](https://nunit.org/)
