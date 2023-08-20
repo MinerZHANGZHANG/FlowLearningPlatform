@@ -2,7 +2,9 @@
 
 #### 简介
 
-FlowLearningPlatform是一个使用BlazorServer框架，开发中的学习平台，目标是为用户提供便捷的作业分发和提交功能，并在此基础上扩展公告展示、实时讨论等功能，形成一个复合的线上学习平台。
+FlowLearningPlatform是一个使用BlazorServer框架开发的学习平台，目标是为用户提供便捷的作业分发和提交功能，并在此基础上扩展公告展示、实时讨论等功能，形成一个复合的线上学习平台。
+
+具体见[**项目文档**](https://z-miner.gitbook.io/learning-platform-introduce/)
 
 ![网站页面](https://files.gitbook.com/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FK5SPGJbAEBza0XqXyPJu%2Fuploads%2FnT3q9hoCVYGHyERSbCRT%2F%E6%95%88%E6%9E%9C.png?alt=media&token=7d26190b-e223-4f2c-8f14-580bedf6ab2b)
 
@@ -15,9 +17,6 @@ FlowLearningPlatform是一个使用BlazorServer框架，开发中的学习平台
 
 ![网站功能](https://files.gitbook.com/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FK5SPGJbAEBza0XqXyPJu%2Fuploads%2FqmbfmJ2XUI2wwPQ5TYnl%2F%E5%AD%A6%E4%B9%A0%E5%B9%B3%E5%8F%B0%E6%A8%A1%E5%9D%97.png?alt=media&token=3529ed24-f9f3-4b2e-b555-d6ca3a1e909f)
 
-#### 设计
-
-见[项目文档](https://z-miner.gitbook.io/learning-platform-introduce/)
 
 #### 使用
 
